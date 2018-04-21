@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://mojo-zd.github.io.git/"/>
-  <updated>2018-04-20T07:43:10.000Z</updated>
+  <updated>2018-04-21T02:49:05.000Z</updated>
   <id>http://mojo-zd.github.io.git/</id>
   
   <author>
@@ -15,6 +15,29 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>frp内网穿透神器</title>
+    <link href="http://mojo-zd.github.io.git/2018/04/21/frp%E5%86%85%E7%BD%91%E7%A9%BF%E9%80%8F%E7%A5%9E%E5%99%A8/"/>
+    <id>http://mojo-zd.github.io.git/2018/04/21/frp内网穿透神器/</id>
+    <published>2018-04-21T02:48:06.000Z</published>
+    <updated>2018-04-21T02:49:05.000Z</updated>
+    
+    <content type="html"><![CDATA[<h4 id="为什么使用内网穿透"><a href="#为什么使用内网穿透" class="headerlink" title="为什么使用内网穿透"></a>为什么使用内网穿透</h4><p>很多场景在调用第三方API的时候需要填写回调地址,如果在内网开发的话就需要做内网穿透。今天给大家介绍一款内网穿透工具<a href="https://github.com/fatedier/frp" target="_blank" rel="noopener">frp</a>,使用起来既简单又方便。</p><h4 id="环境"><a href="#环境" class="headerlink" title="环境"></a>环境</h4><table><thead><tr><th>name</th><th>Version</th></tr></thead><tbody><tr><td>centos</td><td>7.3</td></tr></tbody></table><h4 id="安装步骤"><a href="#安装步骤" class="headerlink" title="安装步骤"></a>安装步骤</h4><ol><li><a href="https://github.com/fatedier/frp/releases" target="_blank" rel="noopener">下载</a>压缩包</li><li><p>解压</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">tar -zxvf frp_0.14.0_linux_amd64.tar.gz</span><br></pre></td></tr></table></figure></li><li><p>配置相关参数实现通过ssh访问公司内网机器</p></li></ol><ul><li><p>server端配置</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">vi frps.ini</span><br><span class="line"></span><br><span class="line">[common]</span><br><span class="line">bind_port = 7000</span><br><span class="line">vhost_http_port = 8079</span><br></pre></td></tr></table></figure></li><li><p>client端配置 (xx.xx.xx.xx为外网可访问的IP)</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">vi frpc.ini</span><br><span class="line"></span><br><span class="line">[common]</span><br><span class="line">server_addr = xx.xx.xx.xx </span><br><span class="line">server_port = 7000</span><br><span class="line"></span><br><span class="line">[ssh]</span><br><span class="line">local_port = 22</span><br><span class="line">remote_port = 6000</span><br><span class="line"></span><br><span class="line">[web]</span><br><span class="line">type = http</span><br><span class="line">local_port = 8079</span><br><span class="line">custom_domains = xx.xx.xx.xx</span><br></pre></td></tr></table></figure></li></ul><ol start="4"><li>启动相关服务</li></ol><ul><li><p>start server</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./frps -c ./frps.ini</span><br></pre></td></tr></table></figure></li><li><p>start client</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./frpc -c ./frpc.ini</span><br></pre></td></tr></table></figure></li></ul><ol start="5"><li>验证(通过ssh访问内网机器,假设用户名为test)<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ssh -oPort=6000 test@xx.xx.xx.xx</span><br></pre></td></tr></table></figure></li></ol>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h4 id=&quot;为什么使用内网穿透&quot;&gt;&lt;a href=&quot;#为什么使用内网穿透&quot; class=&quot;headerlink&quot; title=&quot;为什么使用内网穿透&quot;&gt;&lt;/a&gt;为什么使用内网穿透&lt;/h4&gt;&lt;p&gt;很多场景在调用第三方API的时候需要填写回调地址,如果在内网开发的话就需要做内网穿透
+      
+    
+    </summary>
+    
+    
+      <category term="network" scheme="http://mojo-zd.github.io.git/tags/network/"/>
+    
+  </entry>
   
   <entry>
     <title>实用的shell命令</title>
