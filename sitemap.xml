@@ -2,6 +2,13 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://mojo-zd.github.io.git/2018/04/18/golang%E5%AE%9E%E7%94%A8%E5%B0%8F%E5%B7%A5%E5%85%B7/</loc>
+    
+    <lastmod>2018-04-23T09:24:26.000Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>http://mojo-zd.github.io.git/2018/04/12/ceph%E5%AF%B9%E8%B1%A1%E5%AD%98%E5%82%A8%E4%B8%BAHarbor%E6%8F%90%E4%BE%9B%E5%AD%98%E5%82%A8%E9%A9%B1%E5%8A%A8/</loc>
     
     <lastmod>2018-04-21T03:00:37.000Z</lastmod>
@@ -40,13 +47,6 @@
     <loc>http://mojo-zd.github.io.git/2018/04/12/install-nfs-server/</loc>
     
     <lastmod>2018-04-19T01:50:44.000Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>http://mojo-zd.github.io.git/2018/04/18/golang%E5%AE%9E%E7%94%A8%E5%B0%8F%E5%B7%A5%E5%85%B7/</loc>
-    
-    <lastmod>2018-04-19T01:50:32.000Z</lastmod>
     
   </url>
   
