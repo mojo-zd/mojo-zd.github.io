@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://mojo-zd.github.io.git/"/>
-  <updated>2018-04-21T02:49:05.000Z</updated>
+  <updated>2018-05-07T08:05:26.000Z</updated>
   <id>http://mojo-zd.github.io.git/</id>
   
   <author>
@@ -15,6 +15,29 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>harbor漏洞扫描</title>
+    <link href="http://mojo-zd.github.io.git/2018/05/07/harbor%E6%BC%8F%E6%B4%9E%E6%89%AB%E6%8F%8F/"/>
+    <id>http://mojo-zd.github.io.git/2018/05/07/harbor漏洞扫描/</id>
+    <published>2018-05-07T07:44:33.000Z</published>
+    <updated>2018-05-07T08:05:26.000Z</updated>
+    
+    <content type="html"><![CDATA[<h3 id="Harbor漏洞扫描实现"><a href="#Harbor漏洞扫描实现" class="headerlink" title="Harbor漏洞扫描实现"></a>Harbor漏洞扫描实现</h3><p>Harbor通过开源组件Clair实现了漏洞扫描功能,Clair提供了静态文件扫描功能。harbor中可以对特定镜像或者所有镜像进行漏洞扫描，此外用户还可以通过设定扫描策略实现针对所有镜像的漏洞扫描。</p><p>Clair依赖于vulnerability metadata来实现分析过程.第一次初始化安装以后,Clair会自动更新metadata。更新时间取决于data大小和network连接情况.如果数据库并未完全准备好,harbor中的镜像列表页面footer位置将会有警告信息.</p><h3 id="基于clair启动harbor"><a href="#基于clair启动harbor" class="headerlink" title="基于clair启动harbor"></a>基于clair启动harbor</h3><p>harbor提供了基于clair的启动模式,启动非常简单<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">1. cd $HARBOR_ROOT //进入harbor根目录</span><br><span class="line">2. ./install.sh --with-clair</span><br></pre></td></tr></table></figure></p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h3 id=&quot;Harbor漏洞扫描实现&quot;&gt;&lt;a href=&quot;#Harbor漏洞扫描实现&quot; class=&quot;headerlink&quot; title=&quot;Harbor漏洞扫描实现&quot;&gt;&lt;/a&gt;Harbor漏洞扫描实现&lt;/h3&gt;&lt;p&gt;Harbor通过开源组件Clair实现了漏洞扫描功能,Cla
+      
+    
+    </summary>
+    
+    
+      <category term="registry" scheme="http://mojo-zd.github.io.git/tags/registry/"/>
+    
+  </entry>
   
   <entry>
     <title>frp内网穿透神器</title>
