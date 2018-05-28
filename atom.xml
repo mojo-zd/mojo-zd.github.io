@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://mojo-zd.github.io.git/"/>
-  <updated>2018-05-28T15:34:27.000Z</updated>
+  <updated>2018-05-28T15:35:31.000Z</updated>
   <id>http://mojo-zd.github.io.git/</id>
   
   <author>
@@ -21,15 +21,15 @@
     <link href="http://mojo-zd.github.io.git/2018/05/28/%E6%9E%84%E5%BB%BA%E5%9F%BA%E4%BA%8Edocker%E7%9A%84ss-server/"/>
     <id>http://mojo-zd.github.io.git/2018/05/28/构建基于docker的ss-server/</id>
     <published>2018-05-28T15:34:01.000Z</published>
-    <updated>2018-05-28T15:34:27.000Z</updated>
+    <updated>2018-05-28T15:35:31.000Z</updated>
     
-    <content type="html"><![CDATA[<h2 id="为什么需要构建docker版的ss-server"><a href="#为什么需要构建docker版的ss-server" class="headerlink" title="为什么需要构建docker版的ss server"></a>为什么需要构建docker版的ss server</h2><p>这几年容器技术发展的相当迅猛,个人也是一个容器爱好者。只要一次构建镜像一个命令就可以拉起来一个ss server, 所以构建了基于容器的ss server。下面构建基于源代码地址为 <a href="https://github.com/mojo-zd/shadowsocks-go" target="_blank" rel="noopener">https://github.com/mojo-zd/shadowsocks-go</a></p><h2 id="构建并运行server"><a href="#构建并运行server" class="headerlink" title="构建并运行server"></a>构建并运行server</h2><ol><li><p>进入server目录</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cd shadowsocks-go/cmd/shadowsocks-server</span><br></pre></td></tr></table></figure></li><li><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make build //构建基于linux的可执行文件</span><br><span class="line">make docker-build //构建docker镜像,并推送到阿里云镜像仓库</span><br></pre></td></tr></table></figure></li><li><p>运行docker-compose启动server</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">//cmd/shadowsocks-server下有对应的docker-compose文件和需要的config.json文件只需要修改成实际环境参数即可</span><br><span class="line">docker-compose up -d</span><br></pre></td></tr></table></figure></li></ol>]]></content>
+    <content type="html"><![CDATA[<h4 id="为什么需要构建docker版的ss-server"><a href="#为什么需要构建docker版的ss-server" class="headerlink" title="为什么需要构建docker版的ss server"></a>为什么需要构建docker版的ss server</h4><p>这几年容器技术发展的相当迅猛,个人也是一个容器爱好者。只要一次构建镜像一个命令就可以拉起来一个ss server, 所以构建了基于容器的ss server。下面构建基于源代码地址为 <a href="https://github.com/mojo-zd/shadowsocks-go" target="_blank" rel="noopener">https://github.com/mojo-zd/shadowsocks-go</a></p><h4 id="构建并运行server"><a href="#构建并运行server" class="headerlink" title="构建并运行server"></a>构建并运行server</h4><ol><li><p>进入server目录</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cd shadowsocks-go/cmd/shadowsocks-server</span><br></pre></td></tr></table></figure></li><li><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">make build //构建基于linux的可执行文件</span><br><span class="line">make docker-build //构建docker镜像,并推送到阿里云镜像仓库</span><br></pre></td></tr></table></figure></li><li><p>运行docker-compose启动server</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">//cmd/shadowsocks-server下有对应的docker-compose文件和需要的config.json文件只需要修改成实际环境参数即可</span><br><span class="line">docker-compose up -d</span><br></pre></td></tr></table></figure></li></ol>]]></content>
     
     <summary type="html">
     
       
       
-        &lt;h2 id=&quot;为什么需要构建docker版的ss-server&quot;&gt;&lt;a href=&quot;#为什么需要构建docker版的ss-server&quot; class=&quot;headerlink&quot; title=&quot;为什么需要构建docker版的ss server&quot;&gt;&lt;/a&gt;为什么需要构建docker版
+        &lt;h4 id=&quot;为什么需要构建docker版的ss-server&quot;&gt;&lt;a href=&quot;#为什么需要构建docker版的ss-server&quot; class=&quot;headerlink&quot; title=&quot;为什么需要构建docker版的ss server&quot;&gt;&lt;/a&gt;为什么需要构建docker版
       
     
     </summary>
