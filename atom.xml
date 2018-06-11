@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://mojo-zd.github.io.git/"/>
-  <updated>2018-05-30T07:46:12.000Z</updated>
+  <updated>2018-06-11T09:32:29.000Z</updated>
   <id>http://mojo-zd.github.io.git/</id>
   
   <author>
@@ -15,6 +15,29 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>golang project layout</title>
+    <link href="http://mojo-zd.github.io.git/2018/06/11/golang-project-layout/"/>
+    <id>http://mojo-zd.github.io.git/2018/06/11/golang-project-layout/</id>
+    <published>2018-06-11T09:32:10.000Z</published>
+    <updated>2018-06-11T09:32:29.000Z</updated>
+    
+    <content type="html"><![CDATA[<h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><p>在go项目的开发中很多developer并没有真正关心项目的layout规范。在最近维护的代码中体会颇深。项目结构混乱,文件随意定义,维护起来相当痛苦。为项目维护增加了很高的维护成本。</p><h3 id="Go-Directories声明"><a href="#Go-Directories声明" class="headerlink" title="Go Directories声明"></a>Go Directories声明</h3><h4 id="cmd"><a href="#cmd" class="headerlink" title="/cmd"></a>/cmd</h4><p>项目的主程序入口,每个应用程序的目录名称应与你想要执行文件的名称相匹配(eg:/cmd/myapp)。</p><p>最好不要把太多代码放到该目录下,如果你觉得你的代码需要被其他模块引用或者被其他项目引用你应该把这类代码放到/pkg目录下。如果你的代码不会被重复使用也不想被其他项目引用,那么你应该将这类代码放到/internal目录。</p><p>/cmd目录使用可以参考一下这些<a href="https://github.com/golang-standards/project-layout/blob/master/cmd/README.md" target="_blank" rel="noopener">示例项目</a></p><h4 id="internal"><a href="#internal" class="headerlink" title="/internal"></a>/internal</h4><p>该目录主要存放项目的私有代码,这些代码不会被其他应用程序或者库所引用。正常来讲项目的实际代码应该放在/internal/app目录下(eg:/internal/app/myapp)。该目录下共享的代码应该放在/internal/pkg下(eg:/internal/pkg/myprivlib)。</p><h4 id="pkg"><a href="#pkg" class="headerlink" title="/pkg"></a>/pkg</h4><p>此目录下的代码可以被其他应用程序导入使用(eg:/pkg/mypubliclib)。/pkg<a href="https://github.com/golang-standards/project-layout/blob/master/pkg/README.md" target="_blank" rel="noopener">示例项目</a></p><h4 id="vendor"><a href="#vendor" class="headerlink" title="/vendor"></a>/vendor</h4><p>应用依赖(通过你喜欢的项目依赖管理工具来管理),如果你是构建一个通用的libaray建议不要提交相应的应用依赖。</p><h3 id="Service-Application-Directories"><a href="#Service-Application-Directories" class="headerlink" title="Service Application Directories"></a>Service Application Directories</h3><h4 id="api"><a href="#api" class="headerlink" title="/api"></a>/api</h4><p>OpenAPI/Swagger规范, Json schema文件, protocol定义文件<br>参考<a href="https://github.com/golang-standards/project-layout/blob/master/api/README.md" target="_blank" rel="noopener">示例</a></p><h3 id="Web-Application-Directories"><a href="#Web-Application-Directories" class="headerlink" title="Web Application Directories"></a>Web Application Directories</h3><h4 id="web"><a href="#web" class="headerlink" title="/web"></a>/web</h4><p>Web项目特定组件 eg:static web assets, server side templates and SPAs</p><h3 id="Common-Application-Directories"><a href="#Common-Application-Directories" class="headerlink" title="Common Application Directories"></a>Common Application Directories</h3><h4 id="configs"><a href="#configs" class="headerlink" title="/configs"></a>/configs</h4><p>配置模板或者默认配置</p><h4 id="init"><a href="#init" class="headerlink" title="/init"></a>/init</h4><p>System init (systemd, upstart, sysv) and process manager/supervisor (runit, supervisord) configs.</p><h4 id="scripts"><a href="#scripts" class="headerlink" title="/scripts"></a>/scripts</h4><p>执行各种脚本,如 build, install, analysis, etc operations</p><p>像Makefile这种应该放在根目录下(eg:<a href="https://github.com/hashicorp/terraform/blob/master/Makefile)" target="_blank" rel="noopener">https://github.com/hashicorp/terraform/blob/master/Makefile)</a>.</p><p>/scripts相关<a href="https://github.com/golang-standards/project-layout/blob/master/scripts/README.md" target="_blank" rel="noopener">示例</a></p><h4 id="build"><a href="#build" class="headerlink" title="/build"></a>/build</h4><p>打包&amp;CI</p><p>把例如cloud(AMI), container(Docker),OS(deb, rpm, pkg) 打包配置和脚本放在 /build/pakcage目录 </p><p>把CI(travis, circle, drone)配置和脚本放到/build/ci目录</p><h4 id="deployments"><a href="#deployments" class="headerlink" title="/deployments"></a>/deployments</h4><p>IaaS, PaaS, system and container orchestration deployment configurations and templates (docker-compose, kubernetes/helm, mesos, terraform, bosh).</p><h3 id="test"><a href="#test" class="headerlink" title="/test"></a>/test</h3><p>Additional external test apps and test data. Feel free to structure the /test directory anyway you want. For bigger projects it makes sense to have a data subdirectory (e.g., /test/data).</p><p>See the <a href="https://github.com/golang-standards/project-layout/blob/master/test/README.md" target="_blank" rel="noopener">/test</a> directory for examples</p><h3 id="Other-Directories"><a href="#Other-Directories" class="headerlink" title="Other Directories"></a>Other Directories</h3><h4 id="docs"><a href="#docs" class="headerlink" title="/docs"></a>/docs</h4><p>设计&amp;用户文档,另外你的godoc生成的目录也是放在该目录下</p><p>/docs <a href="https://github.com/golang-standards/project-layout/blob/master/docs/README.md" target="_blank" rel="noopener">示例</a></p><h4 id="examples"><a href="#examples" class="headerlink" title="/examples"></a>/examples</h4><p>项目或者公共库示例<br>/examples <a href="https://github.com/golang-standards/project-layout/blob/master/examples/README.md" target="_blank" rel="noopener">示例</a></p><h4 id="third-party"><a href="#third-party" class="headerlink" title="/third_party"></a>/third_party</h4><p>外部工具</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h3 id=&quot;概述&quot;&gt;&lt;a href=&quot;#概述&quot; class=&quot;headerlink&quot; title=&quot;概述&quot;&gt;&lt;/a&gt;概述&lt;/h3&gt;&lt;p&gt;在go项目的开发中很多developer并没有真正关心项目的layout规范。在最近维护的代码中体会颇深。项目结构混乱,文件随意定义,维护起
+      
+    
+    </summary>
+    
+    
+      <category term="golang" scheme="http://mojo-zd.github.io.git/tags/golang/"/>
+    
+  </entry>
   
   <entry>
     <title>构建基于docker的ss server</title>
