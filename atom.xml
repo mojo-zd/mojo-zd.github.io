@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://mojo-zd.github.io.git/"/>
-  <updated>2018-06-13T14:48:21.000Z</updated>
+  <updated>2018-06-29T09:05:47.000Z</updated>
   <id>http://mojo-zd.github.io.git/</id>
   
   <author>
@@ -15,6 +15,30 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>运行docker容器时如何动态传入golang中的flag参数</title>
+    <link href="http://mojo-zd.github.io.git/2018/06/29/%E8%BF%90%E8%A1%8Cdocker%E5%AE%B9%E5%99%A8%E6%97%B6%E5%A6%82%E4%BD%95%E5%8A%A8%E6%80%81%E4%BC%A0%E5%85%A5golang%E4%B8%AD%E7%9A%84flag%E5%8F%82%E6%95%B0/"/>
+    <id>http://mojo-zd.github.io.git/2018/06/29/运行docker容器时如何动态传入golang中的flag参数/</id>
+    <published>2018-06-29T09:05:08.000Z</published>
+    <updated>2018-06-29T09:05:47.000Z</updated>
+    
+    <content type="html"><![CDATA[<p>容器使用已经有一段时间了,对于运行docker时怎么动态传入golang中的flag参数还没有尝试过。以前使用的时候都是使用环境变量的形式,golang既然有flag的形式,那就有必要研究一下。下面主要针对docker、docker-compose两种方式</p><h3 id="docker-file-define"><a href="#docker-file-define" class="headerlink" title="docker file define"></a>docker file define</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">FROM alpine:3.7</span><br><span class="line"></span><br><span class="line">COPY demo /go/bin/demo</span><br><span class="line"></span><br><span class="line">WORKDIR /go/bin/</span><br><span class="line"></span><br><span class="line">ENTRYPOINT [&quot;/go/bin/demo&quot;]</span><br></pre></td></tr></table></figure><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">//build docker image</span><br><span class="line">docker build -t test .</span><br></pre></td></tr></table></figure><h3 id="docker"><a href="#docker" class="headerlink" title="docker"></a>docker</h3><ul><li><p>直接运行</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">go run main.go -url=localhost -port 9999</span><br><span class="line"></span><br><span class="line">output:</span><br><span class="line"></span><br><span class="line">flag url is  localhost</span><br><span class="line">flag port is  9999</span><br></pre></td></tr></table></figure></li><li><p>docker run </p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">docker run test -url=localhost -port=9999</span><br><span class="line"></span><br><span class="line">output:</span><br><span class="line"></span><br><span class="line">flag url is  localhost</span><br><span class="line">flag port is  9999</span><br></pre></td></tr></table></figure></li></ul><h3 id="docker-compose"><a href="#docker-compose" class="headerlink" title="docker-compose"></a>docker-compose</h3><ul><li><p>define docker-compose</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">version: &quot;3&quot;</span><br><span class="line">services:</span><br><span class="line">  demo:</span><br><span class="line">    image: test</span><br><span class="line">    entrypoint:</span><br><span class="line">      - /go/bin/demo</span><br><span class="line">      - -url=localhost</span><br><span class="line">      - -port=9999</span><br></pre></td></tr></table></figure></li><li><p>run</p><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">docker-compose up -d</span><br><span class="line">//查看对应容器日志 同样打印了上述信息</span><br></pre></td></tr></table></figure></li></ul>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;p&gt;容器使用已经有一段时间了,对于运行docker时怎么动态传入golang中的flag参数还没有尝试过。以前使用的时候都是使用环境变量的形式,golang既然有flag的形式,那就有必要研究一下。下面主要针对docker、docker-compose两种方式&lt;/p&gt;
+&lt;h3 
+      
+    
+    </summary>
+    
+    
+      <category term="docker" scheme="http://mojo-zd.github.io.git/tags/docker/"/>
+    
+  </entry>
   
   <entry>
     <title>如何为k8s提供ceph类型的动态存储卷</title>
