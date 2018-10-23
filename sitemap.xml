@@ -2,9 +2,16 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://mojo-zd.github.io.git/2018/10/23/kubernetes%E4%B8%ADoperator-prometheus%E3%80%81prometheus%E8%BF%9C%E7%A8%8B%E8%AF%BB%E5%86%99%E5%AE%9E%E7%8E%B0/</loc>
+    
+    <lastmod>2018-10-23T08:30:46.000Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>http://mojo-zd.github.io.git/2018/06/13/%E5%A6%82%E4%BD%95%E4%B8%BAk8s%E6%8F%90%E4%BE%9Bceph%E7%B1%BB%E5%9E%8B%E7%9A%84%E5%8A%A8%E6%80%81%E5%AD%98%E5%82%A8%E5%8D%B7/</loc>
     
-    <lastmod>2018-08-14T12:18:24.000Z</lastmod>
+    <lastmod>2018-08-14T12:24:24.000Z</lastmod>
     
   </url>
   
