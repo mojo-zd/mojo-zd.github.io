@@ -2,6 +2,13 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>http://mojo-zd.github.io.git/2018/12/04/k8s%E4%B8%AD%E9%9B%86%E6%88%90prometheus-operator%E6%94%AF%E6%8C%81consul%E5%BD%A2%E5%BC%8F%E7%9A%84prometheus%E8%81%94%E9%82%A6/</loc>
+    
+    <lastmod>2018-12-04T09:33:21.000Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>http://mojo-zd.github.io.git/2018/11/20/%E9%80%9A%E8%BF%87consul%E5%AE%9E%E7%8E%B0prometheus%E8%81%94%E9%82%A6/</loc>
     
     <lastmod>2018-11-20T10:33:14.000Z</lastmod>
