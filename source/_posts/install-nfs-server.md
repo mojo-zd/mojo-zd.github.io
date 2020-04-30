@@ -1,7 +1,9 @@
 ---
 title: install nfs server
 date: 2018-04-12 17:07:38
-tags: storage driver
+categories: math
+mathjax: true
+tags: storage-driver
 ---
 ### nfs服务器安装
 ##### ENV: Linux - CentOS-7

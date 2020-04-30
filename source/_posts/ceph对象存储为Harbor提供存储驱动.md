@@ -1,6 +1,8 @@
 ---
 title: ceph对象存储为Harbor提供存储驱动
 date: 2018-04-12 17:04:27
+categories: math
+mathjax: true
 tags: registry
 ---
 ### 主机环境
@@ -23,7 +25,7 @@ docker run -d \
                 --name=ceph-demo \
                 kiwenlau/ceph-demo
 ```
-> 如果RGW_CIVETWEB_PORT不指定,默认监听7480端口
+**备注:** 如果RGW_CIVETWEB_PORT不指定,默认监听7480端口
 
 #### 添加swift用户
 - 创建s3用户
@@ -114,7 +116,7 @@ radosgw-admin subuser create --uid=mojo --subuser=mojo:swift --access=full
     "temp_url_keys": []
 }
 ```
-> 添加swift账号必须先创建s3用户
+**备注:** 添加swift账号必须先创建s3用户
 
 ### client主机操作
 #### 安装swift客户端
@@ -129,7 +131,7 @@ radosgw-admin subuser create --uid=mojo --subuser=mojo:swift --access=full
 ```
 swift -A http://192.168.1.251:8080/auth/v1.0 -U mojo:swift -K 'LRDTpRiMXjC1fKWBQwPrP327myVnZ2FSB0XGAkV8' post registry
 ```
-> 192.168.1.251 为ceph服务所在主机ip, 8080为RGW_CIVETWEB_PORT的值
+**备注:** 192.168.1.251 为ceph服务所在主机ip, 8080为RGW_CIVETWEB_PORT的值
 
 #### 查看创建的registry container
 ```
@@ -141,7 +143,7 @@ registry
 ```
 
 ### Harbor安装
-> 基于在线方式的安装, 本文采用http的方式配置harbor
+**备注:** 基于在线方式的安装, 本文采用http的方式配置harbor
 - 下载
 ```
 1. wget https://github.com/vmware/harbor/releases/download/v1.2.2/harbor-online-installer-v1.2.2.tgz
@@ -193,7 +195,7 @@ notifications:
         threshold: 5
         backoff: 1s
 ```
-> authurl为http://CEPH_SERVER_IP:RGW_CIVETWEB_PORT/auth/v1.0
+**备注:** authurl为http://CEPH_SERVER_IP:RGW_CIVETWEB_PORT/auth/v1.0
 - 为docker添加insecure
 ```
 1. vi /etc/docker/daemon.json
@@ -250,7 +252,7 @@ cephfs_metadata
 2. docker tag docker.io/nginx xx.xx.xx.xx/library/nginx
 3. docker push xx.xx.xx.xx/library/nginx
 ```
-> xx.xx.xx.xx为harbor的访问地址
+**备注:** xx.xx.xx.xx为harbor的访问地址
 
 - 验证镜像是否已经存在ceph中
 ```

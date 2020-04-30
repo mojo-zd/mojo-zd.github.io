@@ -1,6 +1,8 @@
 ---
 title: dragonfly与harbor组建支持P2P的镜像服务
 date: 2018-04-12 16:57:47
+categories: math
+mathjax: true
 tags: registry
 ---
 ### 背景

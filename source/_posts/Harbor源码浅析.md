@@ -1,6 +1,8 @@
 ---
 title: Harbor源码浅析
 date: 2018-04-12 17:13:10
+categories: math
+mathjax: true
 tags: registry
 ---
 之前写过一篇Harbor的介绍短文，这篇文章对Harbor源码进行了粗略的解析，希望能对Harbor进行扩展的朋友提供帮助，如果不当之处还望指点。
@@ -119,7 +121,7 @@ http {
   }
 }
 ```
-> 大家可能注意到上面的upstream registry、upstream ui了。这里的配置代理了registry、harbor ui。当请求通过80端口访问时,如果地址是/*、/server/*地址时,直接转发到ui服务。同样的拦截的到/v2/*将转发到registry服务。
+大家可能注意到上面的upstream registry、upstream ui了。这里的配置代理了registry、harbor ui。当请求通过80端口访问时,如果地址是/*、/server/*地址时,直接转发到ui服务。同样的拦截的到/v2/*将转发到registry服务。
 
 
 - registry服务的配置config.yml
@@ -161,7 +163,7 @@ notifications:
         backoff: 1s
 
 ```
-> 上面的核心配置为auth部分,auth中指定了token验证服务地址-->http://10.0.0.36:8080/service/token。 另外notifications部分的配置用于监听registry的相关事件,如：docker push 、docker pull等等。docker deaman会把相关的image的信息都传递到指定的API。这样用户便可以把相关的数据同步到自己的数据库中。 Harbor的token验证服务和docker事件通知监听都设计在harbor的ui中。分配对应src/ui/service/token.go、src/ui/service/notification.go文件。有兴趣
+上面的核心配置为auth部分,auth中指定了token验证服务地址-->http://10.0.0.36:8080/service/token。 另外notifications部分的配置用于监听registry的相关事件,如：docker push 、docker pull等等。docker deaman会把相关的image的信息都传递到指定的API。这样用户便可以把相关的数据同步到自己的数据库中。 Harbor的token验证服务和docker事件通知监听都设计在harbor的ui中。分配对应src/ui/service/token.go、src/ui/service/notification.go文件。有兴趣
 - ui的配置env文件
 ```
 
@@ -194,7 +196,7 @@ TOKEN_URL=http://ui
 VERIFY_REMOTE_CERT=on
 TOKEN_EXPIRATION=30
 ```
-> ui的env配置位于make/common/config/ui下。这里的变量浅显易懂我就不多介绍了,jobservice同样的处理。
+ui的env配置位于make/common/config/ui下。这里的变量浅显易懂我就不多介绍了,jobservice同样的处理。
 
 - 容器管理
 如基于Harbor源码打包成最终的Docker镜像。请看下面的几个例子。
@@ -206,7 +208,7 @@ MAINTAINER mojo_ma@wise2c.com
 
 COPY make/common/config/nginx /etc/nginx
 ```
-> 把执行prepare生成的ngnix相关配置拷贝到镜像中,并基于ngnix:1.11.5做成的ngnix镜像
+把执行prepare生成的ngnix相关配置拷贝到镜像中,并基于ngnix:1.11.5做成的ngnix镜像
 2. ui镜像文件
 ```
 FROM golang:1.6.2

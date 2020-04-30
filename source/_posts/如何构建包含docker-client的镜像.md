@@ -1,6 +1,8 @@
 ---
 title: 如何构建包含docker-client的镜像
 date: 2018-04-12 16:52:02
+categories: math
+mathjax: true
 tags: docker
 ---
 **在很多场景下我们可能会在容器中调用docker命令,如何操作本文可以做一下简单介绍。**

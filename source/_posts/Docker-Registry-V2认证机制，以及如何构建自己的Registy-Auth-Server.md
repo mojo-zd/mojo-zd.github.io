@@ -1,6 +1,8 @@
 ---
 title: Docker Registry V2认证机制，以及如何构建自己的Registy Auth Server
 date: 2018-04-12 17:15:28
+categories: math
+mathjax: true
 tags: registry
 ---
 如果你有一下需求，请阅读本文：
@@ -9,7 +11,7 @@ tags: registry
 * 想要根据自己的业务构建企业级镜像仓库
 * 想要理解Haboar这类工具的实现方式，不甘只是工具的使用者
 
-> 当然文章的内容虽然也有参考价值，但是如果能自己阅读参考文献的内容显然意义更大。文章只是作为记录
+当然文章的内容虽然也有参考价值，但是如果能自己阅读参考文献的内容显然意义更大。文章只是作为记录
 
 ## Docker Registry V2的认证过程
 
@@ -277,7 +279,7 @@ docker run -d -p 5000:5000 --restart=always --name registry \
       - REGISTRY_AUTH_TOKEN_ROOTCERTBUNDLE=/certs/auth.crt
       - REGISTRY_LOG_LEVEL=debug
 ```
-> 上述environment参数都是必填项,本机进行docker相关操作默认使用的是http协议,如果要支持https请参考[https://docs.docker.com/engine/security/https](https://docs.docker.com/engine/security/https)
+上述environment参数都是必填项,本机进行docker相关操作默认使用的是http协议,如果要支持https请参考[https://docs.docker.com/engine/security/https](https://docs.docker.com/engine/security/https)
 
 为了实现registry与业务系统的集成，我们配置registry auth的实现方式为token
 
@@ -295,7 +297,7 @@ auth:
 - auth.token.issuer: registry信任的auth server名称
 - auth.token.rootcertbundle: 用户验证token签名的公钥文件
 
-> 其中auth.crt为使用openssl生成的公钥文件，用于registry验证token的合法性
+其中auth.crt为使用openssl生成的公钥文件，用于registry验证token的合法性
 
 以以上配置为例，我们来看看registry与auth server的实际交互过程：
 
@@ -324,7 +326,7 @@ Www-Authenticate: Bearer realm="http://172.16.137.217:8080/auth",service="Docker
 1. client从http://172.16.137.217:8080/auth获取认证信息
 2. scope携带的是镜像仓库的操作信息.以上面的信息为例,scope记录了用户从repository仓库中对samalba/my-app镜像进行了pull操作.
 
-> 返回信息根据用户设置的auth配置产生
+返回信息根据用户设置的auth配置产生
 
 Docker Client提供用户输入用户名和密码后向auth server的Endpoint发送请求：
 
@@ -425,7 +427,7 @@ http://172.16.137.217:8080/auth?service=Docker registry&scope=repository:samalba
 - Split the result into 12 base32 encoded groups with : as delimiter.
 ```
 
-> 对于基于golang开发的同学而言可以直接使用https://github.com/docker/libtrust/blob/master/key.go提供的KeyID方法获取公钥的keyid
+对于基于golang开发的同学而言可以直接使用https://github.com/docker/libtrust/blob/master/key.go提供的KeyID方法获取公钥的keyid
 
 2. 设置jwt的payload信息Claim Set
 
@@ -497,7 +499,7 @@ public class RegistryAuthController {
 
 添加RegistryAuthServer实现授权验证以及生成Token令牌
 
-> 备注：作为示例keyid我们直接使用docker提供的libtrust库使用公钥文件和私钥文件生成，另外代码中的硬编码，字符常量请忽略~just demo..
+**备注：**作为示例keyid我们直接使用docker提供的libtrust库使用公钥文件和私钥文件生成，另外代码中的硬编码，字符常量请忽略~just demo..
 
 ```
 @Component
