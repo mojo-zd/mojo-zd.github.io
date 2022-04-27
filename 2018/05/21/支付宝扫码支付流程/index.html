@@ -1,0 +1,169 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="google-site-verification" content="" />
+  <meta name="referrer" content="unsafe-url">
+  
+  <title>支付宝扫码支付流程</title>
+  <meta name="author" content="John Doe">
+  <meta name="description" content="准备工作
+证书准备关于如何制作证书可以参考官网OpenSSL工具介绍.直接用工具生成可以参考这里。生成的公钥需提供给支付宝账号管理者上传到支付宝开放平台,私钥需填写到代码中供签名时使用。
+
+支付宝提供了相应的开发测试功能,你可以点击”开发者中心”–&amp;gt;”研发服务”–&amp;gt;”沙箱”.这里给你提供">
+  
+  
+  <meta property="og:title" content="支付宝扫码支付流程"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:site_name" content="Hexo"/>
+  <link href="/apple-touch-icon-precomposed.png" sizes="180x180" rel="apple-touch-icon-precomposed">
+  <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/m.min.css">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML" async></script>
+
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+<body>
+  <a id="top"></a>
+  <div id="main">
+    <div class="main-ctnr">
+      <div class="behind">
+  <a href="/" class="back black-color">
+    <svg class="i-close" viewBox="0 0 32 32" width="22" height="22" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
+        <path d="M2 30 L30 2 M30 30 L2 2"></path>
+    </svg>
+  </a>
+  
+</div>
+
+
+  <article class="standard post">
+    <div class="title">
+      
+  
+    <h1 class="page-title center">
+        支付宝扫码支付流程
+    </h1>
+  
+
+
+    </div>
+    <div class="meta center">
+      <time datetime="2018-05-21T11:30:10.000Z" itemprop="datePublished">
+  <svg class="i-calendar" viewBox="0 0 32 32" width="16" height="16" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+    <path d="M2 6 L2 30 30 30 30 6 Z M2 15 L30 15 M7 3 L7 9 M13 3 L13 9 M19 3 L19 9 M25 3 L25 9"></path>
+  </svg>
+  &nbsp;
+  2018-05-21
+</time>
+
+
+
+
+
+    
+    &nbsp;
+    <svg class="i-tag" viewBox="0 0 32 32" width="16" height="16" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+      <circle cx="24" cy="8" r="2"></circle>
+      <path d="M2 18 L18 2 30 2 30 14 14 30 Z"></path>
+    </svg>
+    &nbsp;
+    <a href="/tags/payment/">payment</a>
+
+
+    </div>
+    <hr>
+    
+      <ol class="toc"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%87%86%E5%A4%87%E5%B7%A5%E4%BD%9C"><span class="toc-text">准备工作</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%96%B0%E5%BB%BA%E5%BA%94%E7%94%A8"><span class="toc-text">新建应用</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%9B%B8%E5%85%B3%E6%8E%A5%E5%8F%A3"><span class="toc-text">相关接口</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%B5%81%E7%A8%8B%E8%B0%83%E7%94%A8"><span class="toc-text">流程调用</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%9B%B8%E5%85%B3%E5%AE%9E%E7%8E%B0-golang"><span class="toc-text">相关实现(golang)</span></a></li></ol>
+    
+    <div class="picture-container">
+      
+    </div>
+    <h4 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h4><ol>
+<li><p>证书准备<br>关于如何制作证书可以参考<a target="_blank" rel="noopener" href="https://docs.open.alipay.com/291/106130">官网OpenSSL工具</a>介绍.直接用工具生成可以参考<a target="_blank" rel="noopener" href="https://docs.open.alipay.com/291/105971/">这里</a>。生成的公钥需提供给支付宝账号管理者上传到支付宝开放平台,私钥需填写到代码中供签名时使用。</p>
+</li>
+<li><p>支付宝提供了相应的开发测试功能,你可以点击”开发者中心”–&gt;”研发服务”–&gt;”沙箱”.这里给你提供了相应的app key等相关信,使用沙箱做开发测试再好不过了。</p>
+</li>
+</ol>
+<h4 id="新建应用"><a href="#新建应用" class="headerlink" title="新建应用"></a>新建应用</h4><p>我当前的项目为”网页移动应用”类型,新建应用<a target="_blank" rel="noopener" href="https://openhome.alipay.com/platform/appManage.htm">地址</a>。新建应用的相关证件请自己准备。</p>
+<h4 id="相关接口"><a href="#相关接口" class="headerlink" title="相关接口"></a>相关接口</h4><ol>
+<li>支付相关<a target="_blank" rel="noopener" href="https://docs.open.alipay.com/api">接口</a></li>
+<li>支付回调接口(新建应用的时候需要提供的回调地址),内网测试可以使用<a target="_blank" rel="noopener" href="https://mojo-zd.github.io/2018/04/21/frp%E5%86%85%E7%BD%91%E7%A9%BF%E9%80%8F%E7%A5%9E%E5%99%A8/">frp</a>做调试。</li>
+</ol>
+<h4 id="流程调用"><a href="#流程调用" class="headerlink" title="流程调用"></a>流程调用</h4><ol>
+<li>客户端调用服务器api,生成对应的系统order并提交对应的order信息到alipay系统,设置订单付款成功回调地址。</li>
+<li>服务器端根据提交的订单获取alipay返回的付款地址.</li>
+<li>客户端扫描根据地址生成的二维码进行付款,付款成功以后alipay将会调用服务器端提交订单时设置的回调地址,通知服务器端付款状态</li>
+</ol>
+<h4 id="相关实现-golang"><a href="#相关实现-golang" class="headerlink" title="相关实现(golang)"></a>相关实现(golang)</h4><ul>
+<li>包引用<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">import (</span><br><span class="line">    &quot;fmt&quot;</span><br><span class="line">    &quot;net/http&quot;</span><br><span class="line">    &quot;time&quot;</span><br><span class="line"></span><br><span class="line">    &quot;git.coding.net/ydxxm-server/models&quot;</span><br><span class="line">    &quot;git.coding.net/ydxxm-server/pkg&quot;</span><br><span class="line">    &quot;git.coding.net/ydxxm-server/pkg/constants&quot;</span><br><span class="line">    &quot;git.coding.net/ydxxm-server/pkg/domain&quot;</span><br><span class="line">    &quot;git.coding.net/ydxxm-server/services&quot;</span><br><span class="line">    alipay2 &quot;git.coding.net/ydxxm-server/thirdparty/alipay&quot;</span><br><span class="line">    &quot;git.coding.net/ydxxm-server/tool&quot;</span><br><span class="line">    &quot;git.coding.net/ydxxm-server/tool/validate&quot;</span><br><span class="line">    &quot;github.com/smartwalle/alipay&quot;</span><br><span class="line">)</span><br></pre></td></tr></table></figure></li>
+<li>订单接口<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">// @Title Pay pay of alipay</span><br><span class="line">// @Description Pay pay of alipay</span><br><span class="line">// @Param order body domain.OrderDomain true &quot;order&quot;</span><br><span class="line">// @Success 200 &#123;string&#125; pay success</span><br><span class="line">// @router /pay [post]</span><br><span class="line">func (a *AlipayController) Pay() &#123;</span><br><span class="line">    order := &amp;domain.OrderDomain&#123;&#125;</span><br><span class="line">    a.ErrorHandler(a.Unmarshal(order))</span><br><span class="line">    a.ErrorHandler(validate.ValidatorExtend(order), http.StatusBadRequest)</span><br><span class="line">    order.TradeNo = tool.TradeNo(time.Now())</span><br><span class="line"></span><br><span class="line">    product := &amp;models.Product&#123;Id: order.ProductId&#125;</span><br><span class="line">    err := productService.Read(product)</span><br><span class="line">    a.ErrorHandler(err, http.StatusUnprocessableEntity, constants.ProductNotFound)</span><br><span class="line"></span><br><span class="line">    order.Price = product.Price</span><br><span class="line">    client := alipay2.NewAlipayClient()</span><br><span class="line">    p := alipay.AliPayTradeWapPay&#123;&#125;</span><br><span class="line">    p.NotifyURL = tool.Joint(pkg.SingleLoader.Get(&quot;domain&quot;), &quot;/api/alipay/notify&quot;)</span><br><span class="line">    p.Subject = order.Title</span><br><span class="line">    p.OutTradeNo = order.TradeNo</span><br><span class="line">    p.TotalAmount = order.Summation()</span><br><span class="line">    p.ProductCode = constants.PRODUCT_CODE</span><br><span class="line"></span><br><span class="line">    url, err := client.Client.TradeWapPay(p)</span><br><span class="line">    a.ErrorHandler(err, http.StatusUnprocessableEntity)</span><br><span class="line"></span><br><span class="line">    a.ErrorHandler(a.addOrder(order, product), http.StatusUnprocessableEntity)</span><br><span class="line">    a.JsonData(domain.PayInfo&#123;URL: url.String(), TradeNo: order.TradeNo&#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+<li>订单提交后回调接口<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line">// @Title Notify alipay auth notify url</span><br><span class="line">// @Description Notify alipay auth notify url</span><br><span class="line">// @Success 200 &#123;string&#125; logout success</span><br><span class="line">// @router /notify [post]</span><br><span class="line">func (a *AlipayController) Notify() &#123;</span><br><span class="line">    tradeNo := a.GetString(&quot;trade_no&quot;)</span><br><span class="line">    outTradeNo := a.GetString(&quot;out_trade_no&quot;)</span><br><span class="line">    amount, _ := a.GetFloat(&quot;total_amount&quot;)</span><br><span class="line">    buyerId := a.GetString(&quot;buyer_id&quot;)</span><br><span class="line">    order := &amp;models.Order&#123;TradeNo: outTradeNo&#125;</span><br><span class="line">    err := orderService.Read(order, &quot;trade_no&quot;)</span><br><span class="line">    if err != nil || !order.Validate(float32(amount)) &#123;</span><br><span class="line">        a.ErrorHandler(err, http.StatusUnprocessableEntity, constants.OrderInvalid)</span><br><span class="line">        return</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    order.PayStatus = constants.Finished</span><br><span class="line">    order.Status = constants.OrderPlaying</span><br><span class="line">    order.OutTradeNo = tradeNo</span><br><span class="line">    order.Account = buyerId</span><br><span class="line"></span><br><span class="line">    history := &amp;models.WalletHistory&#123;</span><br><span class="line">        Money:      order.Summation(),</span><br><span class="line">        WalletType: constants.AliPay,</span><br><span class="line">        ActionType: constants.Expense,</span><br><span class="line">        Account:    order.Account,</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    err = orderService.Update(order)</span><br><span class="line">    if err != nil &#123;</span><br><span class="line">        // 添加操作日志</span><br><span class="line">        history.Description = fmt.Sprintf(constants.PayFailedInfo, order.Account, constants.Alipay, time.Now(), amount, err.Error())</span><br><span class="line">        walletHistoryService.Create(history)</span><br><span class="line">        // 退款操作</span><br><span class="line">        alipay2.NewAlipayClient().Client.TradeRefund(alipay.AliPayTradeRefund&#123;TradeNo: order.TradeNo&#125;)</span><br><span class="line">        a.refund(order)</span><br><span class="line">        return</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    history.Description = fmt.Sprintf(constants.AlipayConsumeInfo, order.Account, time.Now().Format(constants.DateYMDHM), order.Summation())</span><br><span class="line">    walletHistoryService.Create(history)</span><br><span class="line"></span><br><span class="line">    a.JsonData(map[string]string&#123;&#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ul>
+
+
+  </article>
+  <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  <div class="busuanzi center">
+    page PV:&nbsp;<span id="busuanzi_value_page_pv"></span>&nbsp;・&nbsp;
+    site PV:&nbsp;<span id="busuanzi_value_site_pv"></span>&nbsp;・&nbsp;
+    site UV:&nbsp;<span id="busuanzi_value_site_uv"></span>
+  </div>
+
+
+    
+
+
+
+
+
+    </div>
+  </div>
+  <footer class="page-footer"><div class="clearfix">
+</div>
+<div class="right-foot">
+    <div class="firstrow">
+        <a href="#top" target="_self">
+        <svg class="i-caret-right" viewBox="0 0 32 32" width="24" height="24" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
+            <path d="M10 30 L26 16 10 2 Z"></path>
+        </svg>
+        </a>
+        © XXX 2016-2020
+    </div>
+    <div class="secondrow">
+        <a target="_blank" rel="noopener" href="https://github.com/gaoryrt/hexo-theme-pln">
+        Theme Pln
+        </a>
+    </div>
+</div>
+<div class="clearfix">
+</div>
+</footer>
+  <script src="//cdn.bootcss.com/jquery/2.2.1/jquery.min.js"></script>
+<script src="/js/search.min.js"></script>
+<script type="text/javascript">
+
+// disqus scripts
+
+
+// dropdown scripts
+$(".dropdown").click(function(event) {
+  var current = $(this);
+  event.stopPropagation();
+  $(current).children(".dropdown-content")[($(current).children(".dropdown-content").hasClass("open"))?'removeClass':'addClass']("open")
+});
+$(document).click(function(){
+    $(".dropdown-content").removeClass("open");
+})
+
+var path = "/search.xml";
+searchFunc(path, 'local-search-input', 'local-search-result');
+
+</script>
+
+</body>
+</html>

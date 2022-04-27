@@ -1,0 +1,193 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="google-site-verification" content="" />
+  <meta name="referrer" content="unsafe-url">
+  
+  <title>kubernetes中operator-prometheus、prometheus远程读写实现</title>
+  <meta name="author" content="John Doe">
+  <meta name="description" content="remote read、write优点
+长期持久化监控数据
+集中管理多个prometheus中的监控数据
+对外提供统一的监控数据出口
+
+环境准备准备两套k8s集群, 分别部署prometheus prometheus-operator
+
+
+
+docker server version
+kuberne">
+  
+  
+  <meta property="og:title" content="kubernetes中operator-prometheus、prometheus远程读写实现"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:site_name" content="Hexo"/>
+  <link href="/apple-touch-icon-precomposed.png" sizes="180x180" rel="apple-touch-icon-precomposed">
+  <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/m.min.css">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML" async></script>
+
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+<body>
+  <a id="top"></a>
+  <div id="main">
+    <div class="main-ctnr">
+      <div class="behind">
+  <a href="/" class="back black-color">
+    <svg class="i-close" viewBox="0 0 32 32" width="22" height="22" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
+        <path d="M2 30 L30 2 M30 30 L2 2"></path>
+    </svg>
+  </a>
+  
+</div>
+
+
+  <article class="standard post">
+    <div class="title">
+      
+  
+    <h1 class="page-title center">
+        kubernetes中operator-prometheus、prometheus远程读写实现
+    </h1>
+  
+
+
+    </div>
+    <div class="meta center">
+      <time datetime="2018-10-23T08:28:48.000Z" itemprop="datePublished">
+  <svg class="i-calendar" viewBox="0 0 32 32" width="16" height="16" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+    <path d="M2 6 L2 30 30 30 30 6 Z M2 15 L30 15 M7 3 L7 9 M13 3 L13 9 M19 3 L19 9 M25 3 L25 9"></path>
+  </svg>
+  &nbsp;
+  2018-10-23
+</time>
+
+
+
+
+
+
+    </div>
+    <hr>
+    
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#remote-read%E3%80%81write%E4%BC%98%E7%82%B9"><span class="toc-text">remote read、write优点</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%8E%AF%E5%A2%83%E5%87%86%E5%A4%87"><span class="toc-text">环境准备</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%90%AF%E5%8A%A8%E7%9B%91%E6%8E%A7%E6%95%B0%E6%8D%AEdatabase"><span class="toc-text">启动监控数据database</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#prometheus%E9%85%8D%E7%BD%AE"><span class="toc-text">prometheus配置</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#prometheus%E6%9D%83%E9%99%90%E6%A8%A1%E5%9E%8B%E5%AE%9A%E4%B9%89"><span class="toc-text">prometheus权限模型定义</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%AE%9A%E4%B9%89prometheus%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6configmap"><span class="toc-text">定义prometheus配置文件configmap</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#prometheus-%E9%83%A8%E7%BD%B2"><span class="toc-text">prometheus 部署</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E9%83%A8%E7%BD%B2"><span class="toc-text">部署</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#prometheus-operator%E9%85%8D%E7%BD%AE"><span class="toc-text">prometheus operator配置</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#adapter-yaml"><span class="toc-text">adapter.yaml</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#prometheus-operator%E4%B8%ADprometheus%E7%9A%84%E9%83%A8%E7%BD%B2%E6%96%87%E4%BB%B6%E6%B7%BB%E5%8A%A0remoteRead%E3%80%81remoteWrite"><span class="toc-text">prometheus-operator中prometheus的部署文件添加remoteRead、remoteWrite</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E9%83%A8%E7%BD%B2-1"><span class="toc-text">部署</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%AA%8C%E8%AF%81"><span class="toc-text">验证</span></a></li></ol>
+    
+    <div class="picture-container">
+      
+    </div>
+    <h3 id="remote-read、write优点"><a href="#remote-read、write优点" class="headerlink" title="remote read、write优点"></a>remote read、write优点</h3><ul>
+<li>长期持久化监控数据</li>
+<li>集中管理多个prometheus中的监控数据</li>
+<li>对外提供统一的监控数据出口</li>
+</ul>
+<h3 id="环境准备"><a href="#环境准备" class="headerlink" title="环境准备"></a>环境准备</h3><p>准备两套k8s集群, 分别部署prometheus prometheus-operator</p>
+<table>
+<thead>
+<tr>
+<th>docker server version</th>
+<th>kubernetes version</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1.13.1</td>
+<td>v1.8.6</td>
+</tr>
+</tbody></table>
+<h3 id="启动监控数据database"><a href="#启动监控数据database" class="headerlink" title="启动监控数据database"></a>启动监控数据database</h3><p>以下以opentsdb作为存储prometheus监控数据的database。注:opentsdb较高版本对于带有”:”的key或value并不支持。<br>eg:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">      &quot;aggregator&quot;: &quot;sum&quot;,</span><br><span class="line">      &quot;metric&quot;: &quot;cpu&quot;,</span><br><span class="line">      &quot;tags&quot;: &#123;</span><br><span class="line">        &quot;demo-name&quot;: &quot;opentsdb-test&quot;,</span><br><span class="line">        &quot;host&quot;: &quot;localhost:9090&quot;,</span><br><span class="line">        &quot;try-name&quot;: &quot;bluebreezecf-sample&quot;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>为了方便测试,下面以容器的方式启动opentsdb数据库</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -d -p 4242:4242 -p 8070:8070 stackexchange/bosun:0.6.0-pre</span><br></pre></td></tr></table></figure>
+
+<h3 id="prometheus配置"><a href="#prometheus配置" class="headerlink" title="prometheus配置"></a>prometheus配置</h3><h4 id="prometheus权限模型定义"><a href="#prometheus权限模型定义" class="headerlink" title="prometheus权限模型定义"></a>prometheus权限模型定义</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: rbac.authorization.k8s.io/v1beta1</span><br><span class="line">kind: ClusterRole</span><br><span class="line">metadata:</span><br><span class="line">  name: prometheus-colletor</span><br><span class="line">rules:</span><br><span class="line">- apiGroups:</span><br><span class="line">  - &#x27;*&#x27;</span><br><span class="line">  resources:</span><br><span class="line">  - &#x27;*&#x27;</span><br><span class="line">  verbs:</span><br><span class="line">  - &#x27;*&#x27;</span><br><span class="line">- nonResourceURLs:</span><br><span class="line">  - &#x27;*&#x27;</span><br><span class="line">  verbs:</span><br><span class="line">  - &#x27;*&#x27;</span><br><span class="line">---</span><br><span class="line">apiVersion: rbac.authorization.k8s.io/v1beta1</span><br><span class="line">kind: ClusterRoleBinding</span><br><span class="line">metadata:</span><br><span class="line">  name: prometheus-colletor</span><br><span class="line">roleRef:</span><br><span class="line">  kind: ClusterRole</span><br><span class="line">  name: kube-system</span><br><span class="line">  apiGroup: rbac.authorization.k8s.io</span><br><span class="line">subjects:</span><br><span class="line">- kind: ServiceAccount</span><br><span class="line">  name: prometheus-colletor</span><br><span class="line">  namespace: prometheus-colletor</span><br><span class="line"></span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: ServiceAccount</span><br><span class="line">metadata:</span><br><span class="line">  name: prometheus-colletor</span><br></pre></td></tr></table></figure>
+
+
+<h4 id="定义prometheus配置文件configmap"><a href="#定义prometheus配置文件configmap" class="headerlink" title="定义prometheus配置文件configmap"></a>定义prometheus配置文件configmap</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: ConfigMap</span><br><span class="line">metadata:</span><br><span class="line">  name: prometheus-config</span><br><span class="line">  namespace: kube-system</span><br><span class="line">data:</span><br><span class="line">  prometheus.yml: |</span><br><span class="line">    global:</span><br><span class="line">      scrape_interval: 30s</span><br><span class="line">      scrape_timeout: 30s</span><br><span class="line">      evaluation_interval: 30s</span><br><span class="line">    remote_write:</span><br><span class="line">    - url: http://127.0.0.1:9201/write</span><br><span class="line">    remote_read:</span><br><span class="line">    - url: http://127.0.0.1:9201/read</span><br><span class="line">    rule_files:</span><br><span class="line">      - &quot;/etc/prometheus-rules/*.rules&quot;</span><br><span class="line">    scrape_configs:</span><br><span class="line">    - job_name: &#x27;kubernetes-apiservers&#x27;</span><br><span class="line">      kubernetes_sd_configs:</span><br><span class="line">      - role: endpoints</span><br><span class="line">      scheme: https</span><br><span class="line">      tls_config:</span><br><span class="line">        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt</span><br><span class="line">      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token</span><br><span class="line">      relabel_configs:</span><br><span class="line">      - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]</span><br><span class="line">        action: keep</span><br><span class="line">        regex: default;kubernetes;https</span><br><span class="line"></span><br><span class="line">    - job_name: &#x27;kubernetes-services&#x27;</span><br><span class="line">      metrics_path: /probe</span><br><span class="line">      params:</span><br><span class="line">        module: [http_2xx]</span><br><span class="line">      kubernetes_sd_configs:</span><br><span class="line">      - role: service</span><br><span class="line">      relabel_configs:</span><br><span class="line">      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_probe]</span><br><span class="line">        action: keep</span><br><span class="line">        regex: true</span><br><span class="line">      - source_labels: [__address__]</span><br><span class="line">        target_label: __param_target</span><br><span class="line">      - target_label: __address__</span><br><span class="line">        replacement: blackbox</span><br><span class="line">      - source_labels: [__param_target]</span><br><span class="line">        target_label: instance</span><br><span class="line">      - action: labelmap</span><br><span class="line">        regex: __meta_kubernetes_service_label_(.+)</span><br><span class="line">      - source_labels: [__meta_kubernetes_namespace]</span><br><span class="line">        target_label: kubernetes_namespace</span><br><span class="line">      - source_labels: [__meta_kubernetes_service_name]</span><br><span class="line">        target_label: kubernetes_name</span><br><span class="line">    </span><br><span class="line">    - job_name: &#x27;kubernetes-service-endpoints&#x27;</span><br><span class="line">      kubernetes_sd_configs:</span><br><span class="line">      - role: endpoints</span><br><span class="line">      relabel_configs:</span><br><span class="line">      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]</span><br><span class="line">        action: keep</span><br><span class="line">        regex: true</span><br><span class="line">      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]</span><br><span class="line">        action: replace</span><br><span class="line">        target_label: __scheme__</span><br><span class="line">        regex: (https?)</span><br><span class="line">      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]</span><br><span class="line">        action: replace</span><br><span class="line">        target_label: __metrics_path__</span><br><span class="line">        regex: (.+)</span><br><span class="line">      - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]</span><br><span class="line">        action: replace</span><br><span class="line">        target_label: __address__</span><br><span class="line">        regex: ([^:]+)(?::\d+)?;(\d+)</span><br><span class="line">        replacement: $1:$2</span><br><span class="line">      - action: labelmap</span><br><span class="line">        regex: __meta_kubernetes_service_label_(.+)</span><br><span class="line">      - source_labels: [__meta_kubernetes_namespace]</span><br><span class="line">        action: replace</span><br><span class="line">        target_label: kubernetes_namespace</span><br><span class="line">      - source_labels: [__meta_kubernetes_service_name]</span><br><span class="line">        action: replace</span><br><span class="line">        target_label: kubernetes_name</span><br></pre></td></tr></table></figure>
+
+<h4 id="prometheus-部署"><a href="#prometheus-部署" class="headerlink" title="prometheus 部署"></a>prometheus 部署</h4><p>以下prometheus.yaml文件中包含了prometheus-server、prometheus-adapter。adapter在此功能中担任的角色相当于一个装换器,write的时候将prometheus采集的数据格式装换为database的记录,read的时候再将database记录转换为prometheus类型的数据格式。对于opentsdb官网并没有提供带有remote_read的adapter。为此我们扩展了官网的opentsdb库增加了remote_read功能。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: extensions/v1beta1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    name: prometheus</span><br><span class="line">    app: prometheus-server</span><br><span class="line">  name: prometheus</span><br><span class="line">  namespace: wisecloud-agent</span><br><span class="line">spec:</span><br><span class="line">  replicas: 1</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        name: prometheus</span><br><span class="line">        app: prometheus-server</span><br><span class="line">    spec:</span><br><span class="line">      serviceAccountName: wisecloud-agent</span><br><span class="line">      containers:</span><br><span class="line">      - name: prometheus</span><br><span class="line">        image: prom/prometheus:v2.3.1</span><br><span class="line">        imagePullPolicy: IfNotPresent</span><br><span class="line">        command:</span><br><span class="line">        - &quot;/bin/prometheus&quot;</span><br><span class="line">        args:</span><br><span class="line">        - &quot;--config.file=/etc/prometheus/prometheus.yml&quot;</span><br><span class="line">        - &quot;--storage.tsdb.path=/prometheus/&quot;</span><br><span class="line">        - &quot;--storage.tsdb.retention=168h&quot;</span><br><span class="line">        # - &quot;--alertmanager.url=http://127.0.0.1:9093&quot;</span><br><span class="line">        ports:</span><br><span class="line">        - containerPort: 9090</span><br><span class="line">          protocol: TCP</span><br><span class="line">        volumeMounts:</span><br><span class="line">        - name: data</span><br><span class="line">          mountPath: &quot;/prometheus&quot;</span><br><span class="line">        - name: config-volume</span><br><span class="line">          mountPath: &quot;/etc/prometheus&quot;</span><br><span class="line">        - name: alert-roles</span><br><span class="line">          mountPath: &quot;/etc/prometheus-rules&quot;</span><br><span class="line">        - name: local-timezone</span><br><span class="line">          mountPath: &quot;/etc/localtime&quot;</span><br><span class="line">        resources:</span><br><span class="line">          requests:</span><br><span class="line">            cpu: 100m</span><br><span class="line">            memory: 100Mi</span><br><span class="line">          limits:</span><br><span class="line">            cpu: 500m</span><br><span class="line">            memory: 2500Mi</span><br><span class="line">      - name: prometheus-adapter</span><br><span class="line">        image: registry.cn-hangzhou.aliyuncs.com/tder/prometheus-adapter:v2.3</span><br><span class="line">        ports:</span><br><span class="line">        - containerPort: 9021</span><br><span class="line">        protocol: TCP</span><br><span class="line">        args:</span><br><span class="line">        - -opentsdb-url=http://xx.xx.xx.xx:4242 // xx.xx.xx.xx为database运行主机ip</span><br><span class="line">      #- name: altermanager</span><br><span class="line">      #  image: prom/alertmanager:v0.15.0</span><br><span class="line">      #  imagePullPolicy: IfNotPresent</span><br><span class="line">      #  args:</span><br><span class="line">      #    - &#x27;--config.file=/etc/alertmanager/config.yml&#x27;</span><br><span class="line">      #    - &#x27;--storage.path=/alertmanager&#x27;</span><br><span class="line">      #  ports:</span><br><span class="line">      #  - containerPort: 9093</span><br><span class="line">      #    protocol: TCP</span><br><span class="line">      #  volumeMounts:</span><br><span class="line">      #  - name: alert-conf</span><br><span class="line">      #    mountPath: /etc/alertmanager</span><br><span class="line">      #  - name: local-timezone</span><br><span class="line">      #    mountPath: &quot;/etc/localtime&quot;</span><br><span class="line">      tolerations:</span><br><span class="line">      - key: &quot;node-role.kubernetes.io/master&quot;</span><br><span class="line">        operator: &quot;Exists&quot;</span><br><span class="line">        effect: &quot;NoSchedule&quot;</span><br><span class="line">      volumes:</span><br><span class="line">      - name: data</span><br><span class="line">        hostPath:</span><br><span class="line">          path: /prometheus</span><br><span class="line">      - name: alert-roles</span><br><span class="line">        hostPath:</span><br><span class="line">          path: /etc/prometheus-rules</span><br><span class="line">      - name: alert-conf</span><br><span class="line">        hostPath:</span><br><span class="line">          path: /etc/alertmanager</span><br><span class="line">      - name: config-volume</span><br><span class="line">        configMap:</span><br><span class="line">          name: prometheus-config</span><br><span class="line">      - name: local-timezone</span><br><span class="line">        hostPath:</span><br><span class="line">          path: /etc/localtime</span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  name: prometheus-server</span><br><span class="line">  namespace: kube-system</span><br><span class="line">spec:</span><br><span class="line">  selector:</span><br><span class="line">    app: prometheus-server</span><br><span class="line">  ports:</span><br><span class="line">  - protocol: TCP</span><br><span class="line">    port: 9090</span><br><span class="line">    targetPort: 9090</span><br><span class="line">    nodePort: 32005</span><br><span class="line">  type: NodePort</span><br></pre></td></tr></table></figure>
+
+<p><strong>注:</strong> 高版本的prometheus在配置storage选项的时候会报permission错误,测试可以给对应的目录设置所有人员可读写模式。如上: <code>chmod 777 /prometheus</code></p>
+<h4 id="部署"><a href="#部署" class="headerlink" title="部署"></a>部署</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl apply -f prometheus.yaml</span><br></pre></td></tr></table></figure>
+
+<h3 id="prometheus-operator配置"><a href="#prometheus-operator配置" class="headerlink" title="prometheus operator配置"></a>prometheus operator配置</h3><h4 id="adapter-yaml"><a href="#adapter-yaml" class="headerlink" title="adapter.yaml"></a>adapter.yaml</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: apps/v1beta2</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: prometheus-adapter</span><br><span class="line">  namespace: monitoring</span><br><span class="line">  labels:</span><br><span class="line">    app: prometheus-adapter</span><br><span class="line">spec:</span><br><span class="line">  replicas: 1</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: prometheus-adapter</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: prometheus-adapter</span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - name: adapter</span><br><span class="line">        image: registry.cn-hangzhou.aliyuncs.com/tder/prometheus-adapter:v2.3</span><br><span class="line">        args:</span><br><span class="line">        - -opentsdb-url=http://yy.yy.yy.yy:4242 //yy.yy.yy.yy为database运行主机ip</span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  name: prometheus-adapter</span><br><span class="line">  namespace: monitoring</span><br><span class="line">spec:</span><br><span class="line">  selector:</span><br><span class="line">    app: prometheus-adapter</span><br><span class="line">  ports:</span><br><span class="line">  - protocol: TCP</span><br><span class="line">    port: 9201</span><br><span class="line">    targetPort: 9201</span><br><span class="line">    nodePort: 30902</span><br><span class="line">  type: NodePort</span><br></pre></td></tr></table></figure>
+
+<h4 id="prometheus-operator中prometheus的部署文件添加remoteRead、remoteWrite"><a href="#prometheus-operator中prometheus的部署文件添加remoteRead、remoteWrite" class="headerlink" title="prometheus-operator中prometheus的部署文件添加remoteRead、remoteWrite"></a>prometheus-operator中prometheus的部署文件添加<code>remoteRead、remoteWrite</code></h4><p>被修改的文件为<a target="_blank" rel="noopener" href="https://github.com/coreos/prometheus-operator/blob/master/contrib/kube-prometheus/manifests/prometheus-prometheus.yaml">prometheus-prometheus.yaml</a></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: monitoring.coreos.com/v1</span><br><span class="line">kind: Prometheus</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    prometheus: k8s</span><br><span class="line">  name: k8s</span><br><span class="line">  namespace: monitoring</span><br><span class="line">spec:</span><br><span class="line">  alerting:</span><br><span class="line">    alertmanagers:</span><br><span class="line">    - name: alertmanager-main</span><br><span class="line">      namespace: monitoring</span><br><span class="line">      port: web</span><br><span class="line">  baseImage: quay.io/prometheus/prometheus</span><br><span class="line">  nodeSelector:</span><br><span class="line">    beta.kubernetes.io/os: linux</span><br><span class="line">  replicas: 2</span><br><span class="line">  remoteRead: </span><br><span class="line">  - url: http://xx.xx.xx.xx:30902/read</span><br><span class="line">  remoteWrite:</span><br><span class="line">  - url: http://xx.xx.xx.xx:30902/write</span><br><span class="line">  resources:</span><br><span class="line">    requests:</span><br><span class="line">      memory: 400Mi</span><br><span class="line">  ruleSelector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      prometheus: k8s</span><br><span class="line">      role: alert-rules</span><br><span class="line">  serviceAccountName: prometheus-k8s</span><br><span class="line">  serviceMonitorNamespaceSelector: &#123;&#125;</span><br><span class="line">  serviceMonitorSelector: &#123;&#125;</span><br><span class="line">  version: v2.3.1</span><br></pre></td></tr></table></figure>
+<p><strong>注:</strong> 目前官方提供的opentsdb的remote_write在prometheus-operator中支持有问题,时间长了导致写入数据失败。</p>
+<h4 id="部署-1"><a href="#部署-1" class="headerlink" title="部署"></a>部署</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">kubectl apply -f adapter.yaml</span><br><span class="line">kubectl apply -f prometheus-prometheus.yaml</span><br></pre></td></tr></table></figure>
+
+<h3 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h3><ul>
+<li><p>write<br>通过查看adapter日志可以看到是否写入数据到database</p>
+</li>
+<li><p>read<br>访问prometheus提供的ui界面, 默认情况prometheus并没有暴露端口。需要验证的话用户可以自己修改prometheus的service暴露9090对外可访问</p>
+</li>
+</ul>
+
+
+  </article>
+  <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  <div class="busuanzi center">
+    page PV:&nbsp;<span id="busuanzi_value_page_pv"></span>&nbsp;・&nbsp;
+    site PV:&nbsp;<span id="busuanzi_value_site_pv"></span>&nbsp;・&nbsp;
+    site UV:&nbsp;<span id="busuanzi_value_site_uv"></span>
+  </div>
+
+
+    
+
+
+
+
+
+    </div>
+  </div>
+  <footer class="page-footer"><div class="clearfix">
+</div>
+<div class="right-foot">
+    <div class="firstrow">
+        <a href="#top" target="_self">
+        <svg class="i-caret-right" viewBox="0 0 32 32" width="24" height="24" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
+            <path d="M10 30 L26 16 10 2 Z"></path>
+        </svg>
+        </a>
+        © XXX 2016-2020
+    </div>
+    <div class="secondrow">
+        <a target="_blank" rel="noopener" href="https://github.com/gaoryrt/hexo-theme-pln">
+        Theme Pln
+        </a>
+    </div>
+</div>
+<div class="clearfix">
+</div>
+</footer>
+  <script src="//cdn.bootcss.com/jquery/2.2.1/jquery.min.js"></script>
+<script src="/js/search.min.js"></script>
+<script type="text/javascript">
+
+// disqus scripts
+
+
+// dropdown scripts
+$(".dropdown").click(function(event) {
+  var current = $(this);
+  event.stopPropagation();
+  $(current).children(".dropdown-content")[($(current).children(".dropdown-content").hasClass("open"))?'removeClass':'addClass']("open")
+});
+$(document).click(function(){
+    $(".dropdown-content").removeClass("open");
+})
+
+var path = "/search.xml";
+searchFunc(path, 'local-search-input', 'local-search-result');
+
+</script>
+
+</body>
+</html>

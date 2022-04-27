@@ -1,0 +1,254 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="google-site-verification" content="" />
+  <meta name="referrer" content="unsafe-url">
+  
+  <title>dragonfly与harbor组建支持P2P的镜像服务</title>
+  <meta name="author" content="John Doe">
+  <meta name="description" content="背景Dragonfly是一个基于P2P的智能文件分发系统,用于解决大规模文件分发场景下分发耗时、成功率低、带宽浪费等难题。大幅提升发布部署、数据预热、大规模容器镜像分发等业务能力。为了提高容器镜像分发能力,我们选择了Dragonfly。本文主要基于Dragonfly来介绍一下配合Harbor如何搭建">
+  
+  
+  <meta property="og:title" content="dragonfly与harbor组建支持P2P的镜像服务"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:site_name" content="Hexo"/>
+  <link href="/apple-touch-icon-precomposed.png" sizes="180x180" rel="apple-touch-icon-precomposed">
+  <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/m.min.css">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML" async></script>
+
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+<body>
+  <a id="top"></a>
+  <div id="main">
+    <div class="main-ctnr">
+      <div class="behind">
+  <a href="/" class="back black-color">
+    <svg class="i-close" viewBox="0 0 32 32" width="22" height="22" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
+        <path d="M2 30 L30 2 M30 30 L2 2"></path>
+    </svg>
+  </a>
+  
+</div>
+
+
+  <article class="standard post">
+    <div class="title">
+      
+  
+    <h1 class="page-title center">
+        dragonfly与harbor组建支持P2P的镜像服务
+    </h1>
+  
+
+
+    </div>
+    <div class="meta center">
+      <time datetime="2018-04-12T08:57:47.000Z" itemprop="datePublished">
+  <svg class="i-calendar" viewBox="0 0 32 32" width="16" height="16" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+    <path d="M2 6 L2 30 30 30 30 6 Z M2 15 L30 15 M7 3 L7 9 M13 3 L13 9 M19 3 L19 9 M25 3 L25 9"></path>
+  </svg>
+  &nbsp;
+  2018-04-12
+</time>
+
+
+    
+    &nbsp;
+    <svg class="i-tag" viewBox="0 0 32 32" width="16" height="16" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+      <circle cx="24" cy="8" r="2"></circle>
+      <path d="M2 18 L18 2 30 2 30 14 14 30 Z"></path>
+    </svg>
+    &nbsp;
+    <a href="/categories/math/">math</a>
+
+
+
+
+    
+    &nbsp;
+    <svg class="i-tag" viewBox="0 0 32 32" width="16" height="16" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+      <circle cx="24" cy="8" r="2"></circle>
+      <path d="M2 18 L18 2 30 2 30 14 14 30 Z"></path>
+    </svg>
+    &nbsp;
+    <a href="/tags/registry/">registry</a>
+
+
+    </div>
+    <hr>
+    
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%83%8C%E6%99%AF"><span class="toc-text">背景</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%89%B9%E6%80%A7"><span class="toc-text">特性</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%9E%B6%E6%9E%84%E4%BB%8B%E7%BB%8D"><span class="toc-text">架构介绍</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AE%89%E8%A3%85"><span class="toc-text">安装</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#install-server"><span class="toc-text">install server</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#install-client"><span class="toc-text">install client</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Harbor%E6%90%AD%E5%BB%BA"><span class="toc-text">Harbor搭建</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8D%97"><span class="toc-text">使用指南</span></a></li></ol>
+    
+    <div class="picture-container">
+      
+    </div>
+    <h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>Dragonfly是一个基于P2P的智能文件分发系统,用于解决大规模文件分发场景下分发耗时、成功率低、带宽浪费等难题。大幅提升发布部署、数据预热、大规模容器镜像分发等业务能力。为了提高容器镜像分发能力,我们选择了Dragonfly。本文主要基于Dragonfly来介绍一下配合Harbor如何搭建自己的支持P2P的镜像仓库服务(文件系统分发本文不做介绍)。</p>
+<h3 id="特性"><a href="#特性" class="headerlink" title="特性"></a>特性</h3><ul>
+<li>基于P2P文件分发</li>
+<li>支持各种容器化技术</li>
+<li>主机级别限速策略</li>
+<li>利用CDN机制避免远程重复下载</li>
+<li>强一致性</li>
+<li>磁盘保护,高效的IO处理</li>
+<li>高性能</li>
+<li>异常自动隔离</li>
+<li>降低文件来源服务器压力</li>
+<li>支持标准的Http Header</li>
+<li>使用简单</li>
+</ul>
+<h3 id="架构介绍"><a href="#架构介绍" class="headerlink" title="架构介绍"></a>架构介绍</h3><ul>
+<li>整体流程</li>
+</ul>
+<p><img src="http://ofp4ip1ms.bkt.clouddn.com/dfget-combine-container.png" alt="image"></p>
+<ul>
+<li>block下载过程</li>
+</ul>
+<p><img src="http://ofp4ip1ms.bkt.clouddn.com/distributing.png" alt="image"></p>
+<p><strong>流程解析:</strong></p>
+<ol>
+<li><p>当执行docker pull操作时,dfget-proxy会拦截docker pull请求。将请求转发给CM(cluster manager)。<br>cm的地址已经在client主机的&#x2F;etc&#x2F;dragonfly.conf文件中配置好了。另外上文中提到的dfget-proxy其实就是df-daemon。Dragonfly中有三个项目,client端:getter(python)、daemon(golang),docker pull时,df-daemon拦截到请求并通过dfget进行文件拉取,server端:supernode(java)。</p>
+</li>
+<li><p>df-daemon启动的时候带了registry参数,并且通过dfget传给服务端supernode。supernode解析参数到对应的镜像仓库获取镜像并以block的形式返回给客户端。如果再次拉取镜像时,supernode就会检测哪一个client存在和镜像文件对应的block,如果存在直接从该client下载,如果不存在就通过server端到镜像仓库拉取镜像。</p>
+</li>
+</ol>
+<h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><h4 id="install-server"><a href="#install-server" class="headerlink" title="install server"></a>install server</h4><p>Dragonfly官方支持基于Docker和Physical Machine两种方案部署server。为了快速搭建,本文基于Docker的方式来安装server。也可参考<a target="_blank" rel="noopener" href="https://github.com/alibaba/Dragonfly/blob/master/docs/install_server.md">官方文档</a>进行安装</p>
+<ol>
+<li><p>clone</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git clone https://github.com/alibaba/Dragonfly.git</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>build image</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cd dragonfly</span><br><span class="line">docker build -t &quot;dragonfly:supernode&quot; . -f ./build/supernode/Dockerfile</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>run dragonfly container</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -d -p 8001:8001 -p 8002:8002 dragonfly:supernode</span><br></pre></td></tr></table></figure></li>
+</ol>
+<p><strong>Note:</strong> 由于基于源码构建的镜像比较大,比较耗时。为了使用方便,我基于源码构建了一个公有的镜像置于阿里云镜像仓库服务器.不想自己构建镜像的小伙伴可以直接使用如下方式启动server。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -d -p 8001:8001 -p 8002:8002 --restart=always registry.cn-hangzhou.aliyuncs.com/p2p-service/dragonfly-server</span><br></pre></td></tr></table></figure>
+<h4 id="install-client"><a href="#install-client" class="headerlink" title="install client"></a>install client</h4><ol>
+<li>下载<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">wget https://github.com/alibaba/Dragonfly/raw/master/package/df-client.linux-amd64.tar.gz</span><br><span class="line">tar -zxvf df-client.linux-amd64.tar.gz -C install</span><br></pre></td></tr></table></figure></li>
+</ol>
+<p><strong>Note:</strong> install为解压的目录,稍后会将这个目录添加到环境变量。<br>2. 设置环境变量path</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">echo $SHELL (get which shell using, current shell is bash)</span><br><span class="line">vi ~/.bashrc</span><br><span class="line"></span><br><span class="line">将下面的设置添加到~/.bashrc文件末</span><br><span class="line">PATH=$PATH:xxx/xxx/install/df-client</span><br><span class="line"></span><br><span class="line">退出vi并执行以下命令</span><br><span class="line">source ~/.bashrc</span><br></pre></td></tr></table></figure>
+<ol start="3">
+<li>验证df-client安装是否正确<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">dfget -h</span><br><span class="line"></span><br><span class="line">usage: dfget [-h] [--url URL] [--output OUTPUT] [--md5 MD5]</span><br><span class="line">             [--callsystem CALLSYSTEM] [--notbs] [--locallimit LOCALLIMIT]</span><br><span class="line">             [--totallimit TOTALLIMIT] [--identifier IDENTIFIER]</span><br><span class="line">             [--timeout TIMEOUT] [--filter FILTER] [--showbar]</span><br><span class="line">             [--pattern &#123;p2p,cdn&#125;] [--version] [--node NODE] [--console]</span><br><span class="line">             [--header HEADER] [--dfdaemon]</span><br><span class="line"></span><br><span class="line">dragonfly is a file distribution system based p2p</span><br><span class="line"></span><br><span class="line">optional arguments:</span><br><span class="line">  -h, --help            show this help message and exit</span><br><span class="line">  --url URL, -u URL     will download a file from this url</span><br><span class="line">  --output OUTPUT, -O OUTPUT, -o OUTPUT</span><br></pre></td></tr></table></figure>
+<h3 id="Harbor搭建"><a href="#Harbor搭建" class="headerlink" title="Harbor搭建"></a>Harbor搭建</h3></li>
+</ol>
+<p><strong>Note:</strong> 基于在线方式的安装, 本文采用http的方式配置Harbor。Harbor版本为1.2.2</p>
+<ol>
+<li><p>下载 </p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">wget https://github.com/vmware/harbor/releases/download/v1.2.2/harbor-online-installer-v1.2.2.tgz</span><br><span class="line"></span><br><span class="line">tar -zxvf harbor-online-installer-v1.2.2.tgz -C install</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>修改配置</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">cd install/harbor</span><br><span class="line">vi harbor.cfg</span><br><span class="line">hostname=xx.xx.xx.xx  //设置为当前主机ip</span><br></pre></td></tr></table></figure></li>
+<li><p>安装并启动harbor服务</p>
+</li>
+</ol>
+<p>**Note:**服务启动以后,如果需要管理Harbor服务的生命周期,可以直接通过docker-compose来管理</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sh install.sh</span><br></pre></td></tr></table></figure>
+<p><strong>说明:</strong><br>执行以上脚本做了一下几件事情</p>
+<ul>
+<li>根据harbor.cfg配置和template模板生成对应的配置文件到common目录下</li>
+<li>调用docker-compose up -d 启动harbor相关服务。第一执行会自动下载相关镜像</li>
+</ul>
+<ol start="4">
+<li>直接访问 <a target="_blank" rel="noopener" href="http://xx.xx.xx.xx/">http://xx.xx.xx.xx</a> 默认账号为 admin:Harbor12345</li>
+</ol>
+<h3 id="使用指南"><a href="#使用指南" class="headerlink" title="使用指南"></a>使用指南</h3><ol>
+<li>在client主机上通过配置文件指定CM(cluster manager)节点<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">vi /etc/dragonfly.conf</span><br><span class="line">内容:</span><br><span class="line">[node]</span><br><span class="line">address=cm node host ip</span><br></pre></td></tr></table></figure></li>
+<li>由于当前Dragonfly暂不支持harbor认证。如果按照<a target="_blank" rel="noopener" href="https://github.com/alibaba/Dragonfly/blob/master/docs/usage.md">官网</a>配置”configure daemon mirror”来拉取镜像会提示授权失败。为了绕过这个问题可以采用docker proxy的方式来解决。具体步骤如下:</li>
+</ol>
+<ul>
+<li>vi &#x2F;etc&#x2F;systemd&#x2F;system&#x2F;docker.service.d&#x2F;http-proxy.conf,没有该文件就直接创建该文件。通过添加proxy，在拉取镜像时将会通过下面的配置地址转发到目标机。<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[Service]</span><br><span class="line">Environment=&quot;HTTP_PROXY=http://127.0.0.1:65001&quot;</span><br></pre></td></tr></table></figure></li>
+<li>更新变更<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl daemon-reload</span><br></pre></td></tr></table></figure></li>
+<li>验证配置是否生效<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">systemctl show --property=Environment docker</span><br><span class="line">输出:</span><br><span class="line">Environment=GOTRACEBACK=crash DOCKER_HTTP_HOST_COMPAT=1 PATH=/usr/libexec/docker:/usr/bin:/usr/sbin HTTP_PROXY=http://127.0.0.1:65001</span><br></pre></td></tr></table></figure></li>
+</ul>
+<ol start="3">
+<li>在client机上添加harbor的insecure地址</li>
+</ol>
+<ul>
+<li>vi &#x2F;etc&#x2F;docker&#x2F;daemon.json<br><img src="http://ofp4ip1ms.bkt.clouddn.com/QQ20180312-161402.png" alt="image">把harbor地址添加到标红模块处</li>
+<li>重启docker<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl restart docker</span><br></pre></td></tr></table></figure></li>
+</ul>
+<ol start="4">
+<li><p>验证inscure是否生效</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker login --username=admin xx.xx.xx.xx</span><br></pre></td></tr></table></figure>
+<p>登录成功说明inscure设置生效。</p>
+</li>
+<li><p>启动client服务</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">df-daemon --registry http://xx.xx.xx.xx</span><br></pre></td></tr></table></figure></li>
+<li><p>验证</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">1. tcpdump -i lo port 65001</span><br><span class="line">2. docker pull xx.xx.xx.xx/repo/image:tag //拉取镜像</span><br></pre></td></tr></table></figure>
+<p>效果(有数据经过65001端口):</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">09:56:54.380443 IP localhost.56894 &gt; localhost.65001: Flags [P.], seq 1:1762, ack 1, win 342, options [nop,nop,TS val 3956769309 ecr 3956769308], length 1761</span><br><span class="line">09:56:54.380466 IP localhost.65001 &gt; localhost.56894: Flags [.], ack 1762, win 1365, options [nop,nop,TS val 3956769309 ecr 3956769309], length 0</span><br><span class="line">09:56:54.412983 IP localhost.65001 &gt; localhost.56894: Flags [P.], seq 1:4097, ack 1762, win 1365, options [nop,nop,TS val 3956769341 ecr 3956769309], length 4096</span><br><span class="line">09:56:54.413001 IP localhost.56894 &gt; localhost.65001: Flags [.], ack 4097, win 1365, options [nop,nop,TS val 3956769341 ecr 3956769341], length 0</span><br><span class="line">09:56:54.413022 IP localhost.65001 &gt; localhost.56894: Flags [P.], seq 4097:4352, ack 1762, win 1365, options [nop,nop,TS val 3956769341 ecr 3956769341], length 255</span><br><span class="line">09:56:54.413029 IP localhost.56894 &gt; localhost.65001: Flags [.], ack 4352, win 1429, options [nop,nop,TS val 3956769341 ecr 3956769341], length 0</span><br><span class="line">09:56:54.413049 IP localhost.65001 &gt; localhost.56894: Flags [F.], seq 4352, ack 1762, win 1365, options [nop,nop,TS val 3956769341 ecr 3956769341], length 0</span><br><span class="line">09:56:54.413192 IP localhost.56894 &gt; localhost.65001: Flags [F.], seq 1762, ack 4353, win 1429, options [nop,nop,TS val 3956769341 ecr 3956769341], length 0</span><br><span class="line">09:56:54.413212 IP localhost.65001 &gt; localhost.56894: Flags [.], ack 1763, win 1365, options [nop,nop,TS val 3956769341 ecr 3956769341], length 0</span><br><span class="line">09:56:54.413791 IP localhost.56896 &gt; localhost.65001: Flags [S], seq 2279785798, win 43690, options [mss 65495,sackOK,TS val 3956769342 ecr 0,nop,wscale 7], length 0</span><br><span class="line">16:35:45.400349 IP localhost.65001 &gt; localhost.56896: Flags [S.], seq 127072263, ack 2279785799, win 43690, options [mss 65495,sackOK,TS val 3956769342 ecr 3956769342,nop,wscale 7], length 0</span><br><span class="line">09:56:54.413819 IP localhost.56896 &gt; localhost.65001: Flags [.], ack 1, win 342, options [nop,nop,TS val 3956769342 ecr 3956769342], length 0</span><br><span class="line">09:56:54.413984 IP localhost.56896 &gt; localhost.65001: Flags [P.], seq 1:374, ack 1, win 342, options [nop,nop,TS val 3956769342 ecr 3956769342], length 373</span><br><span class="line">09:56:54.413995 IP localhost.65001 &gt; localhost.56896: Flags [.], ack 374, win 350, options [nop,nop,TS val 3956769342 ecr 3956769342], length 0</span><br><span class="line">09:56:54.444136 IP localhost.65001 &gt; localhost.56896: Flags [P.], seq 1:1230, ack 374, win 350, options [nop,nop,TS val 3956769372 ecr 3956769342], length 1229</span><br><span class="line">09:56:54.444153 IP localhost.56896 &gt; localhost.65001: Flags [.], ack 1230, win 1365, options [nop,nop,TS val 3956769372 ecr 3956769372], length 0</span><br><span class="line">09:56:54.444180 IP localhost.65001 &gt; localhost.56896: Flags [F.], seq 1230, ack 374, win 350, options [nop,nop,TS val 3956769372 ecr 3956769372], length 0</span><br><span class="line">09:56:54.444360 IP localhost.56896 &gt; localhost.65001: Flags [F.], seq 374, ack 1231, win 1365, options [nop,nop,TS val 3956769373 ecr 3956769372], length 0</span><br><span class="line">09:56:54.444379 IP localhost.65001 &gt; localhost.56896: Flags [.], ack 375, win 350, options [nop,nop,TS val 3956769373 ecr 3956769373], length 0</span><br><span class="line">09:56:54.444695 IP localhost.56898 &gt; localhost.65001: Flags [S], seq 3831704766, win 43690, options [mss 65495,sackOK,TS val 3956769373 ecr 0,nop,wscale 7], length 0</span><br><span class="line">16:37:58.544366 IP localhost.65001 &gt; localhost.56898: Flags [S.], seq 3015556728, ack 3831704767, win 43690, options [mss 65495,sackOK,TS val 3956769373 ecr 3956769373,nop,wscale 7], length 0</span><br><span class="line">09:56:54.444718 IP localhost.56898 &gt; localhost.65001: Flags [.], ack 1, win 342, options [nop,nop,TS val 3956769373 ecr 3956769373], length 0</span><br><span class="line">09:56:54.444835 IP localhost.56898 &gt; localhost.65001: Flags [P.], seq 1:1692, ack 1, win 342, options [nop,nop,TS val 3956769373 ecr 3956769373], length 1691</span><br><span class="line">09:56:54.444849 IP localhost.65001 &gt; localhost.56898: Flags [.], ack 1692, win 1365, options [nop,nop,TS val 3956769373 ecr 3956769373], length 0</span><br><span class="line">09:56:54.477140 IP localhost.65001 &gt; localhost.56898: Flags [P.], seq 1:4097, ack 1692, win 1365, options [nop,nop,TS val 3956769405 ecr 3956769373], length 4096</span><br><span class="line">09:56:54.477158 IP localhost.56898 &gt; localhost.65001: Flags [.], ack 4097, win 1365, options [nop,nop,TS val 3956769405 ecr 3956769405], length 0</span><br><span class="line">09:56:54.477172 IP localhost.65001 &gt; localhost.56898: Flags [P.], seq 4097:4352, ack 1692, win 1365, options [nop,nop,TS val 3956769405 ecr 3956769405], length 255</span><br></pre></td></tr></table></figure></li>
+</ol>
+<p><strong>Note:</strong> 如果要看日志可以在根目录.small-dragonfly&#x2F;logs下查看</p>
+
+
+  </article>
+  <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  <div class="busuanzi center">
+    page PV:&nbsp;<span id="busuanzi_value_page_pv"></span>&nbsp;・&nbsp;
+    site PV:&nbsp;<span id="busuanzi_value_site_pv"></span>&nbsp;・&nbsp;
+    site UV:&nbsp;<span id="busuanzi_value_site_uv"></span>
+  </div>
+
+
+    
+
+
+
+
+
+    </div>
+  </div>
+  <footer class="page-footer"><div class="clearfix">
+</div>
+<div class="right-foot">
+    <div class="firstrow">
+        <a href="#top" target="_self">
+        <svg class="i-caret-right" viewBox="0 0 32 32" width="24" height="24" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
+            <path d="M10 30 L26 16 10 2 Z"></path>
+        </svg>
+        </a>
+        © XXX 2016-2020
+    </div>
+    <div class="secondrow">
+        <a target="_blank" rel="noopener" href="https://github.com/gaoryrt/hexo-theme-pln">
+        Theme Pln
+        </a>
+    </div>
+</div>
+<div class="clearfix">
+</div>
+</footer>
+  <script src="//cdn.bootcss.com/jquery/2.2.1/jquery.min.js"></script>
+<script src="/js/search.min.js"></script>
+<script type="text/javascript">
+
+// disqus scripts
+
+
+// dropdown scripts
+$(".dropdown").click(function(event) {
+  var current = $(this);
+  event.stopPropagation();
+  $(current).children(".dropdown-content")[($(current).children(".dropdown-content").hasClass("open"))?'removeClass':'addClass']("open")
+});
+$(document).click(function(){
+    $(".dropdown-content").removeClass("open");
+})
+
+var path = "/search.xml";
+searchFunc(path, 'local-search-input', 'local-search-result');
+
+</script>
+
+</body>
+</html>

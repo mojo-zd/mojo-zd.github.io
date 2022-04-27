@@ -1,0 +1,195 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="google-site-verification" content="" />
+  <meta name="referrer" content="unsafe-url">
+  
+  <title>promtheus &amp; VictoriaMetrics组合技</title>
+  <meta name="author" content="John Doe">
+  <meta name="description" content="目前Prometheus算的上是比较主流的监控和告警系统了,然而原生的Prometheus并没有提供高可用方案,因此基于Prometheus的高可用推出了很多项目, eg: Prometheus Operator、VictoriaMetrics。下面我要介绍的正是VictoriaMetrics高可用">
+  
+  
+  <meta property="og:title" content="promtheus &amp; VictoriaMetrics组合技"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:site_name" content="Hexo"/>
+  <link href="/apple-touch-icon-precomposed.png" sizes="180x180" rel="apple-touch-icon-precomposed">
+  <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/m.min.css">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML" async></script>
+
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+<body>
+  <a id="top"></a>
+  <div id="main">
+    <div class="main-ctnr">
+      <div class="behind">
+  <a href="/" class="back black-color">
+    <svg class="i-close" viewBox="0 0 32 32" width="22" height="22" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
+        <path d="M2 30 L30 2 M30 30 L2 2"></path>
+    </svg>
+  </a>
+  
+</div>
+
+
+  <article class="standard post">
+    <div class="title">
+      
+  
+    <h1 class="page-title center">
+        promtheus &amp; VictoriaMetrics组合技
+    </h1>
+  
+
+
+    </div>
+    <div class="meta center">
+      <time datetime="2019-06-26T08:40:13.000Z" itemprop="datePublished">
+  <svg class="i-calendar" viewBox="0 0 32 32" width="16" height="16" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+    <path d="M2 6 L2 30 30 30 30 6 Z M2 15 L30 15 M7 3 L7 9 M13 3 L13 9 M19 3 L19 9 M25 3 L25 9"></path>
+  </svg>
+  &nbsp;
+  2019-06-26
+</time>
+
+
+
+
+
+    
+    &nbsp;
+    <svg class="i-tag" viewBox="0 0 32 32" width="16" height="16" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+      <circle cx="24" cy="8" r="2"></circle>
+      <path d="M2 18 L18 2 30 2 30 14 14 30 Z"></path>
+    </svg>
+    &nbsp;
+    <a href="/tags/prometheus/">prometheus</a>
+
+
+    </div>
+    <hr>
+    
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#VictoriaMetrics%E6%98%AF%E4%BB%80%E4%B9%88"><span class="toc-text">VictoriaMetrics是什么</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E4%BD%BF%E7%94%A8VictoriaMetrics"><span class="toc-text">为什么要使用VictoriaMetrics</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%87%86%E5%A4%87%E5%B7%A5%E4%BD%9C"><span class="toc-text">准备工作</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%BC%80%E5%90%AFVictoriaMetrics%E3%80%81Prometheus%E7%BB%84%E5%90%88%E6%A8%A1%E5%BC%8F"><span class="toc-text">开启VictoriaMetrics、Prometheus组合模式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%AB%98%E5%8F%AF%E7%94%A8"><span class="toc-text">高可用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%A7%81%E8%AF%81%E5%A5%87%E8%BF%B9"><span class="toc-text">见证奇迹</span></a></li></ol>
+    
+    <div class="picture-container">
+      
+    </div>
+    <p>目前Prometheus算的上是比较主流的监控和告警系统了,然而原生的Prometheus并没有提供高可用方案,因此基于Prometheus的高可用推出了很多项目, eg: <a target="_blank" rel="noopener" href="https://github.com/coreos/prometheus-operator">Prometheus Operator</a>、<a target="_blank" rel="noopener" href="https://github.com/VictoriaMetrics/VictoriaMetrics">VictoriaMetrics</a>。下面我要介绍的正是VictoriaMetrics高可用模式。</p>
+<h3 id="VictoriaMetrics是什么"><a href="#VictoriaMetrics是什么" class="headerlink" title="VictoriaMetrics是什么"></a>VictoriaMetrics是什么</h3><p>VictoriaMetrics是一个支持高可用、消耗极低、可伸缩的时序数据库,可用于Prometheus监控数据做长期远程存储。</p>
+<h3 id="为什么要使用VictoriaMetrics"><a href="#为什么要使用VictoriaMetrics" class="headerlink" title="为什么要使用VictoriaMetrics"></a>为什么要使用VictoriaMetrics</h3><p>VictoriaMetrics不仅仅是时序数据库,它的优势主要体现在一下几点。</p>
+<ul>
+<li>对外支持Prometheus相关的API，所以它可以直接用于Grafana作为Prometheus数据源使用, 同时扩展了PromQL, 详细使用可参考 <a target="_blank" rel="noopener" href="https://github.com/VictoriaMetrics/VictoriaMetrics/wiki/ExtendedPromQL%E3%80%82">https://github.com/VictoriaMetrics/VictoriaMetrics/wiki/ExtendedPromQL。</a></li>
+<li>针对Prometheus的Metrics插入查询具备高性能和良好的扩展性。甚至性能比InfluxDB和TimescaleDB高出20x</li>
+<li>内存占用方面也做出了优化, 比InfluxDB少10x</li>
+<li>高性能的数据压缩方式,使存入存储的数据量比TimescaleDB多达70x</li>
+<li>优化了高延迟IO和低iops的存储</li>
+<li>操作简单</li>
+<li>支持从第三方时序数据库获取数据源</li>
+<li>异常关闭情况下可以保护存储数据损坏</li>
+</ul>
+<h3 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h3><p>下面的kubernetes,docker仅仅列了一下我当前测试的版本而已,并不要求强制使用对应版本。</p>
+<ul>
+<li>kubernetes环境(version:v1.13.6)</li>
+<li>docker (version:1.13.1)</li>
+<li>准备两个VictoriaMetrics实例,用于高可用测试</li>
+</ul>
+<h3 id="开启VictoriaMetrics、Prometheus组合模式"><a href="#开启VictoriaMetrics、Prometheus组合模式" class="headerlink" title="开启VictoriaMetrics、Prometheus组合模式"></a>开启VictoriaMetrics、Prometheus组合模式</h3><p>下面我直接把Prometheus、Grafana部署在一起,为了测试VictoriaMetrics的高可用,我将会以docker的形式启动多实例VictoriaMetrics。</p>
+<ul>
+<li>以<code>docker-compose</code>方式启动VictoriaMetrics多实例<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">version: &#x27;3&#x27;</span><br><span class="line">services:</span><br><span class="line">  victoria1:</span><br><span class="line">    image: victoriametrics/victoria-metrics:v1.20.1</span><br><span class="line">    ports:</span><br><span class="line">      - 8428:8428</span><br><span class="line">    volumes:</span><br><span class="line">      - /root/victoria1-data:/victoria-metrics-data</span><br><span class="line">  victoria2:</span><br><span class="line">    image: victoriametrics/victoria-metrics:v1.20.1</span><br><span class="line">    ports:</span><br><span class="line">      - 8429:8428</span><br><span class="line">    volumes:</span><br><span class="line">      - /root/victoria2-data:/victoria-metrics-data</span><br></pre></td></tr></table></figure>
+注意:实例victoria1, victoria2并没有将数据mount到同一个目录,方便后面测试promxy聚合功能</li>
+<li>定义Prometheus所需的权限信息<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: rbac.authorization.k8s.io/v1</span><br><span class="line">kind: ClusterRole</span><br><span class="line">metadata:</span><br><span class="line">  name: prometheus</span><br><span class="line">rules:</span><br><span class="line">- apiGroups: [&quot;*&quot;]</span><br><span class="line">  resources: [&quot;*&quot;]</span><br><span class="line">  verbs: [&quot;*&quot;]</span><br><span class="line">---</span><br><span class="line">apiVersion: rbac.authorization.k8s.io/v1</span><br><span class="line">kind: ClusterRoleBinding</span><br><span class="line">metadata:</span><br><span class="line">  name: prometheus</span><br><span class="line">  namespace: default</span><br><span class="line">subjects:</span><br><span class="line">- kind: ServiceAccount</span><br><span class="line">  name: prometheus</span><br><span class="line">  namespace: default</span><br><span class="line">roleRef:</span><br><span class="line">  kind: ClusterRole</span><br><span class="line">  name: prometheus</span><br><span class="line">  apiGroup: rbac.authorization.k8s.io</span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: ServiceAccount</span><br><span class="line">metadata:</span><br><span class="line">  name: prometheus</span><br><span class="line">  namespace: default</span><br></pre></td></tr></table></figure></li>
+<li>部署Prometheus + Grafana</li>
+</ul>
+<p>下面Prometheus配置了kubelet(包括kubelet本身和cadvisor)和一些带有<code>prometheus.io/scrape: &quot;true&quot;</code>annotations的采集对象。对于Prometheus配置不熟悉的朋友可以移步 <a target="_blank" rel="noopener" href="https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config">https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config</a></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: ConfigMap</span><br><span class="line">metadata:</span><br><span class="line">  name: prometheus-config</span><br><span class="line">data:</span><br><span class="line">  prometheus.yml: |</span><br><span class="line">    global:</span><br><span class="line">      scrape_interval:     15s</span><br><span class="line">      evaluation_interval: 15s</span><br><span class="line">      external_labels:</span><br><span class="line">        datacenter: &quot;victoria-1&quot;</span><br><span class="line"></span><br><span class="line">    remote_write:</span><br><span class="line">      - url: &quot;http://10.0.0.41:8428/api/v1/write&quot;</span><br><span class="line">        queue_config:</span><br><span class="line">          max_samples_per_send: 10000</span><br><span class="line">      - url: &quot;http://10.0.0.41:8429/api/v1/write&quot;</span><br><span class="line">        queue_config:</span><br><span class="line">          max_samples_per_send: 10000</span><br><span class="line">    scrape_configs:</span><br><span class="line">    - job_name: &#x27;kubelet&#x27;</span><br><span class="line">      scheme: https</span><br><span class="line">      tls_config:</span><br><span class="line">        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt</span><br><span class="line">      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token</span><br><span class="line"></span><br><span class="line">      kubernetes_sd_configs:</span><br><span class="line">      - role: node</span><br><span class="line">      relabel_configs:</span><br><span class="line">      - action: labelmap</span><br><span class="line">        regex: __meta_kubernetes_node_label_(.+)</span><br><span class="line">      - target_label: __address__</span><br><span class="line">        replacement: kubernetes.default.svc:443</span><br><span class="line">      - source_labels: [__meta_kubernetes_node_name]</span><br><span class="line">        regex: (.+)</span><br><span class="line">        target_label: __metrics_path__</span><br><span class="line">        replacement: /api/v1/nodes/$&#123;1&#125;/proxy/metrics/cadvisor</span><br><span class="line">    - job_name: &#x27;exporters&#x27;</span><br><span class="line">      kubernetes_sd_configs:</span><br><span class="line">      - role: endpoints</span><br><span class="line">      scheme: http</span><br><span class="line">      tls_config:</span><br><span class="line">        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt</span><br><span class="line">      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token</span><br><span class="line">      relabel_configs:</span><br><span class="line">      - source_labels: [__meta_kubernetes_namespace]</span><br><span class="line">        target_label: namespace</span><br><span class="line">      - source_labels: [__meta_kubernetes_endpoints_name]</span><br><span class="line">        target_label: job</span><br><span class="line">      - source_labels: [__meta_kubernetes_service_annotationpresent_prometheus_io_scrape]</span><br><span class="line">        regex: true</span><br><span class="line">        action: keep</span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    app: prometheus</span><br><span class="line">  name: prometheus</span><br><span class="line">spec:</span><br><span class="line">  ports:</span><br><span class="line">  - name: prometheus</span><br><span class="line">    port: 9090</span><br><span class="line">    nodePort: 30001</span><br><span class="line">    protocol: TCP</span><br><span class="line">    targetPort: 9090</span><br><span class="line">  - name: grafana</span><br><span class="line">    port: 3000</span><br><span class="line">    nodePort: 30003</span><br><span class="line">    protocol: TCP</span><br><span class="line">    targetPort: 3000</span><br><span class="line">  type: NodePort</span><br><span class="line">  selector:</span><br><span class="line">    app: prometheus</span><br><span class="line">---</span><br><span class="line">apiVersion: apps/v1beta1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  name: prometheus</span><br><span class="line">spec:</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: prometheus</span><br><span class="line">    spec:</span><br><span class="line">      serviceAccount: prometheus</span><br><span class="line">      containers:</span><br><span class="line">      - name: prometheus</span><br><span class="line">        image: prom/prometheus:v2.10.0</span><br><span class="line">        ports:</span><br><span class="line">        - containerPort: 9090</span><br><span class="line">        args:</span><br><span class="line">        - &quot;--config.file=/etc/prometheus/prometheus.yml&quot;</span><br><span class="line">        volumeMounts:</span><br><span class="line">        - mountPath: /etc/prometheus</span><br><span class="line">          name: config</span><br><span class="line">      - name: grafana</span><br><span class="line">        image: grafana/grafana:6.2.4</span><br><span class="line">        ports:</span><br><span class="line">        - containerPort: 3000</span><br><span class="line">      volumes:</span><br><span class="line">      - configMap:</span><br><span class="line">          name: prometheus-config</span><br><span class="line">        name: config</span><br></pre></td></tr></table></figure>
+<h3 id="高可用"><a href="#高可用" class="headerlink" title="高可用"></a>高可用</h3><p>高可用在生产环境是一个不可避免的话题,VictoriaMetrics同样考虑到这点。VictoriaMetrics的高可用并不像传统意义上的多实例共享一份数据,而是启动了多个实例并各自管理自己的数据。那么问题来了:</p>
+<ol>
+<li>如果对接grafana, 数据源怎么填</li>
+<li>如果解决了问题1,对外提供一个数据源地址, 监控展示的数据量会跟VictoriaMetrics实例数相关吗(有几个实例返回几倍的数据)?</li>
+</ol>
+<p>带着上面的以为,我们来一起揭秘VictoriaMetrics如何使用高可用。我先配上一张简单的流程图表达我的粗略见解。<img src="/victoria/fluent.png"></p>
+<ol>
+<li>配置Prometheus, remote_write中的两个地址分别代表两个VictoriaMetrics实例<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">remote_write:</span><br><span class="line">  - url: &quot;http://10.0.0.41:8428/api/v1/write&quot;</span><br><span class="line">    queue_config:</span><br><span class="line">      max_samples_per_send: 10000</span><br><span class="line">  - url: &quot;http://10.0.0.41:8429/api/v1/write&quot;</span><br><span class="line">    queue_config:</span><br><span class="line">      max_samples_per_send: 10000</span><br></pre></td></tr></table></figure></li>
+<li>配置Proxy, 官网给出的是Promxy作为代理。这里<a target="_blank" rel="noopener" href="https://github.com/jacksontj/promxy">Promxy</a>和<a target="_blank" rel="noopener" href="https://github.com/improbable-eng/thanos">Thanos</a>的聚合功能类似。promxy的相关配置如下:<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">data:</span><br><span class="line">  config.yaml: |</span><br><span class="line">    global:</span><br><span class="line">      evaluation_interval: 5s</span><br><span class="line">      external_labels:</span><br><span class="line">        source: promxy</span><br><span class="line">    # remote_write configuration is used by promxy as its local Appender, meaning all</span><br><span class="line">    # metrics promxy would &quot;write&quot; (not export) would be sent to this. Examples</span><br><span class="line">    # of this include: recording rules, metrics on alerting rules, etc.</span><br><span class="line">    remote_write:</span><br><span class="line">      - url: http://localhost:8083/receive</span><br><span class="line">    ##</span><br><span class="line">    ### Promxy configuration</span><br><span class="line">    ##</span><br><span class="line">    promxy:</span><br><span class="line">      server_groups:</span><br><span class="line">        - static_configs:</span><br><span class="line">            - targets:</span><br><span class="line">              - 10.0.0.41:8428</span><br><span class="line">            - targets:</span><br><span class="line">              - 10.0.0.41:8429</span><br><span class="line">          labels:</span><br><span class="line">            sg: k8s01_30001</span><br><span class="line">          anti_affinity: 10s</span><br><span class="line">kind: ConfigMap</span><br><span class="line">metadata:</span><br><span class="line">  name: promxy-config</span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    app: promxy</span><br><span class="line">  name: promxy</span><br><span class="line">spec:</span><br><span class="line">  ports:</span><br><span class="line">  - name: promxy</span><br><span class="line">    port: 8082</span><br><span class="line">    nodePort: 30004</span><br><span class="line">    protocol: TCP</span><br><span class="line">    targetPort: 8082</span><br><span class="line">  type: NodePort</span><br><span class="line">  selector:</span><br><span class="line">    app: promxy</span><br><span class="line">---</span><br><span class="line">apiVersion: extensions/v1beta1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    app: promxy</span><br><span class="line">  name: promxy</span><br><span class="line">spec:</span><br><span class="line">  replicas: 1</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: promxy</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: promxy</span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - args:</span><br><span class="line">        - &quot;--config=/etc/promxy/config.yaml&quot;</span><br><span class="line">        - &quot;--web.enable-lifecycle&quot;</span><br><span class="line">        command:</span><br><span class="line">        - &quot;/bin/promxy&quot;</span><br><span class="line">        image: quay.io/jacksontj/promxy:latest</span><br><span class="line">        imagePullPolicy: Always</span><br><span class="line">        livenessProbe:</span><br><span class="line">          httpGet:</span><br><span class="line">            path: &quot;/-/healthy&quot;</span><br><span class="line">            port: 8082</span><br><span class="line">          initialDelaySeconds: 3</span><br><span class="line">        name: promxy</span><br><span class="line">        ports:</span><br><span class="line">        - containerPort: 8082</span><br><span class="line">        readinessProbe:</span><br><span class="line">          httpGet:</span><br><span class="line">            path: &quot;/-/ready&quot;</span><br><span class="line">            port: 8082</span><br><span class="line">          initialDelaySeconds: 3</span><br><span class="line">        volumeMounts:</span><br><span class="line">        - mountPath: &quot;/etc/promxy/&quot;</span><br><span class="line">          name: promxy-config</span><br><span class="line">          readOnly: true</span><br><span class="line">      # container to reload configs on configmap change</span><br><span class="line">      - args:</span><br><span class="line">        - &quot;--volume-dir=/etc/promxy&quot;</span><br><span class="line">        - &quot;--webhook-url=http://localhost:8082/-/reload&quot;</span><br><span class="line">        image: jimmidyson/configmap-reload:v0.1</span><br><span class="line">        name: promxy-server-configmap-reload</span><br><span class="line">        volumeMounts:</span><br><span class="line">        - mountPath: &quot;/etc/promxy/&quot;</span><br><span class="line">          name: promxy-config</span><br><span class="line">          readOnly: true</span><br><span class="line">      volumes:</span><br><span class="line">      - configMap:</span><br><span class="line">          name: promxy-config</span><br><span class="line">        name: promxy-config</span><br></pre></td></tr></table></figure>
+上面配置中给出了promxy的对外访问地址:<a href="http://10.0.0.41:30004,当然这里仅仅只是为了测试,用于正式项目中的时候最好使用kubernetes中的dns">http://10.0.0.41:30004,当然这里仅仅只是为了测试,用于正式项目中的时候最好使用kubernetes中的dns</a>: promxy.default.svc:8082,这样更灵活。通过上述两步已经完成了所有工作了。</li>
+</ol>
+<p>步骤1为Prometheus指定remote_write endpoints, prometheus会并行的把所有采集到的metrics往所有endpoint中丢,从而完成持久化。</p>
+<p>步骤2在promxy中配置promethues数据源(由于VictoriaMetrics本身支持Prometheus的API,这里直接对接VictoriaMetrics即可),promxy对外提供唯一的访问入口, 配置Grafana数据源时直接使用promxy对外的访问地址即可。</p>
+<h3 id="见证奇迹"><a href="#见证奇迹" class="headerlink" title="见证奇迹"></a>见证奇迹</h3><p>上面说了一大堆,现在可以见证奇迹了,各位观众请看截图。</p>
+<ul>
+<li>prometheus metrics效果图 <img src="/victoria/prometheus.png"></li>
+<li>promxy效果图 <img src="/victoria/promxy.png"></li>
+<li>添加grfana datasource <img src="/victoria/datasource.png"></li>
+<li>添加测试dashboard <img src="/victoria/test-dashboard.png"></li>
+<li>grafana dashboard效果图 <img src="/victoria/result.png"></li>
+</ul>
+<p>相关部署文件可以在 <a target="_blank" rel="noopener" href="https://github.com/mojo-zd/docs/tree/master/kubernetes/prometheus/high-availability">https://github.com/mojo-zd/docs/tree/master/kubernetes/prometheus/high-availability</a> 自行拷贝</p>
+
+
+  </article>
+  <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  <div class="busuanzi center">
+    page PV:&nbsp;<span id="busuanzi_value_page_pv"></span>&nbsp;・&nbsp;
+    site PV:&nbsp;<span id="busuanzi_value_site_pv"></span>&nbsp;・&nbsp;
+    site UV:&nbsp;<span id="busuanzi_value_site_uv"></span>
+  </div>
+
+
+    
+
+
+
+
+
+    </div>
+  </div>
+  <footer class="page-footer"><div class="clearfix">
+</div>
+<div class="right-foot">
+    <div class="firstrow">
+        <a href="#top" target="_self">
+        <svg class="i-caret-right" viewBox="0 0 32 32" width="24" height="24" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
+            <path d="M10 30 L26 16 10 2 Z"></path>
+        </svg>
+        </a>
+        © XXX 2016-2020
+    </div>
+    <div class="secondrow">
+        <a target="_blank" rel="noopener" href="https://github.com/gaoryrt/hexo-theme-pln">
+        Theme Pln
+        </a>
+    </div>
+</div>
+<div class="clearfix">
+</div>
+</footer>
+  <script src="//cdn.bootcss.com/jquery/2.2.1/jquery.min.js"></script>
+<script src="/js/search.min.js"></script>
+<script type="text/javascript">
+
+// disqus scripts
+
+
+// dropdown scripts
+$(".dropdown").click(function(event) {
+  var current = $(this);
+  event.stopPropagation();
+  $(current).children(".dropdown-content")[($(current).children(".dropdown-content").hasClass("open"))?'removeClass':'addClass']("open")
+});
+$(document).click(function(){
+    $(".dropdown-content").removeClass("open");
+})
+
+var path = "/search.xml";
+searchFunc(path, 'local-search-input', 'local-search-result');
+
+</script>
+
+</body>
+</html>

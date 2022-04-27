@@ -1,0 +1,171 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="google-site-verification" content="" />
+  <meta name="referrer" content="unsafe-url">
+  
+  <title>k8s中集成prometheus-operator支持consul形式的prometheus联邦</title>
+  <meta name="author" content="John Doe">
+  <meta name="description" content="prometheus注册consulprometheus.yaml
+12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626">
+  
+  
+  <meta property="og:title" content="k8s中集成prometheus-operator支持consul形式的prometheus联邦"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:site_name" content="Hexo"/>
+  <link href="/apple-touch-icon-precomposed.png" sizes="180x180" rel="apple-touch-icon-precomposed">
+  <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/m.min.css">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML" async></script>
+
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+<body>
+  <a id="top"></a>
+  <div id="main">
+    <div class="main-ctnr">
+      <div class="behind">
+  <a href="/" class="back black-color">
+    <svg class="i-close" viewBox="0 0 32 32" width="22" height="22" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
+        <path d="M2 30 L30 2 M30 30 L2 2"></path>
+    </svg>
+  </a>
+  
+</div>
+
+
+  <article class="standard post">
+    <div class="title">
+      
+  
+    <h1 class="page-title center">
+        k8s中集成prometheus-operator支持consul形式的prometheus联邦
+    </h1>
+  
+
+
+    </div>
+    <div class="meta center">
+      <time datetime="2018-12-04T09:31:28.000Z" itemprop="datePublished">
+  <svg class="i-calendar" viewBox="0 0 32 32" width="16" height="16" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+    <path d="M2 6 L2 30 30 30 30 6 Z M2 15 L30 15 M7 3 L7 9 M13 3 L13 9 M19 3 L19 9 M25 3 L25 9"></path>
+  </svg>
+  &nbsp;
+  2018-12-04
+</time>
+
+
+
+
+
+
+    </div>
+    <hr>
+    
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#prometheus%E6%B3%A8%E5%86%8Cconsul"><span class="toc-text">prometheus注册consul</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%AE%BE%E7%BD%AEprometheus-operator%E5%AF%B9consul%E7%9A%84%E6%94%AF%E6%8C%81"><span class="toc-text">设置prometheus-operator对consul的支持</span></a></li></ol>
+    
+    <div class="picture-container">
+      
+    </div>
+    <h3 id="prometheus注册consul"><a href="#prometheus注册consul" class="headerlink" title="prometheus注册consul"></a>prometheus注册consul</h3><p>prometheus.yaml</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: extensions/v1beta1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    name: prometheus</span><br><span class="line">    app: prometheus-server</span><br><span class="line">    com.wise2c.service: prometheus</span><br><span class="line">    com.wise2c.stack: wisecloud-agent</span><br><span class="line">  name: prometheus</span><br><span class="line">  namespace: wisecloud-agent</span><br><span class="line">spec:</span><br><span class="line">  replicas: 1</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        name: prometheus</span><br><span class="line">        com.wise2c.service: prometheus</span><br><span class="line">        com.wise2c.stack: wisecloud-agent</span><br><span class="line">        app: prometheus-server</span><br><span class="line">    spec:</span><br><span class="line">      hostNetwork: true</span><br><span class="line">      affinity:</span><br><span class="line">        nodeAffinity:</span><br><span class="line">          requiredDuringSchedulingIgnoredDuringExecution:</span><br><span class="line">            nodeSelectorTerms:</span><br><span class="line">            - matchExpressions:</span><br><span class="line">              - key: io.wise2c.service.prometheus</span><br><span class="line">                operator: Exists</span><br><span class="line">      serviceAccountName: wisecloud-agent</span><br><span class="line">      containers:</span><br><span class="line">      - name: service-register</span><br><span class="line">        image: registry.cn-hangzhou.aliyuncs.com/tder/service-register:latest</span><br><span class="line">        imagePullPolicy: IfNotPresent</span><br><span class="line">        envFrom:</span><br><span class="line">        - configMapRef:</span><br><span class="line">            name: agent-config</span><br><span class="line">        env:</span><br><span class="line">          - name: LISTEN_PORT</span><br><span class="line">            value: &quot;8089&quot;</span><br><span class="line">          - name: SERVICE_NAME</span><br><span class="line">            value: wisecloud-agent-prometheus</span><br><span class="line">          - name: SERVICE_PORT</span><br><span class="line">            value: &quot;9090&quot;</span><br><span class="line">          - name: SERVICE_HEALTH_CHECK_PATH</span><br><span class="line">            value: &quot;/health&quot;</span><br><span class="line">      - name: prometheus</span><br><span class="line">        image: prom/prometheus:v2.3.1</span><br><span class="line">        imagePullPolicy: IfNotPresent</span><br><span class="line">        command:</span><br><span class="line">        - &quot;/bin/prometheus&quot;</span><br><span class="line">        args:</span><br><span class="line">        - &quot;-config.file=/etc/prometheus/prometheus.yml&quot;</span><br><span class="line">        - &quot;-storage.local.path=/prometheus&quot;</span><br><span class="line">        - &quot;-storage.local.retention=180h&quot;</span><br><span class="line">        ports:</span><br><span class="line">        - containerPort: 9090</span><br><span class="line">          protocol: TCP</span><br><span class="line">        volumeMounts:</span><br><span class="line">        - name: data</span><br><span class="line">          mountPath: &quot;/prometheus&quot;</span><br><span class="line">        - name: config-volume</span><br><span class="line">          mountPath: &quot;/etc/prometheus&quot;</span><br><span class="line">        - name: alert-roles</span><br><span class="line">          mountPath: &quot;/etc/prometheus-rules&quot;</span><br><span class="line">        - name: local-timezone</span><br><span class="line">          mountPath: &quot;/etc/localtime&quot;</span><br><span class="line">        resources:</span><br><span class="line">          requests:</span><br><span class="line">            cpu: 100m</span><br><span class="line">            memory: 100Mi</span><br><span class="line">          limits:</span><br><span class="line">            cpu: 500m</span><br><span class="line">            memory: 2500Mi</span><br></pre></td></tr></table></figure>
+<p><strong>注意:</strong> service-register用来注册prometheus到指定的consul服务器</p>
+<table>
+<thead>
+<tr>
+<th>环境变量</th>
+<th>变量说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>LISTEN_PORT</td>
+<td>service-register运行端口</td>
+</tr>
+<tr>
+<td>SERVICE_NAME</td>
+<td>注册到consul的名称</td>
+</tr>
+<tr>
+<td>SERVICE_PORT</td>
+<td>注册到consul的端口(这里为prometheus运行端口)</td>
+</tr>
+<tr>
+<td>SERVICE_HEALTH_CHECK_PATH</td>
+<td>改地址由service-register提供</td>
+</tr>
+</tbody></table>
+<p>prometheus config配置</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: ConfigMap</span><br><span class="line">metadata:</span><br><span class="line">  name: prometheus-config</span><br><span class="line">  namespace: wisecloud-agent</span><br><span class="line">data:</span><br><span class="line">  prometheus.yml: |</span><br><span class="line">    global:</span><br><span class="line">      scrape_interval: 30s</span><br><span class="line">      scrape_timeout: 30s</span><br><span class="line">      evaluation_interval: 30s</span><br><span class="line">      external_labels:</span><br><span class="line">        environment: k8s</span><br><span class="line">    rule_files:</span><br><span class="line">      - &quot;/etc/prometheus-rules/*.rules&quot;</span><br><span class="line">    scrape_configs:</span><br><span class="line">    - job_name: &#x27;prometheus&#x27;</span><br><span class="line">      static_configs:</span><br><span class="line">      - targets: [&#x27;localhost:9090&#x27;]</span><br><span class="line"></span><br><span class="line">    - job_name: &#x27;kubernetes-apiservers&#x27;</span><br><span class="line">      kubernetes_sd_configs:</span><br><span class="line">      - role: endpoints</span><br><span class="line">      scheme: https</span><br><span class="line">      tls_config:</span><br><span class="line">        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt</span><br><span class="line">      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token</span><br><span class="line">      relabel_configs:</span><br><span class="line">      - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]</span><br><span class="line">        action: keep</span><br><span class="line">        regex: default;kubernetes;https</span><br><span class="line"></span><br><span class="line">    - job_name: &#x27;kubernetes-pods&#x27;</span><br><span class="line">      kubernetes_sd_configs:</span><br><span class="line">      - role: pod</span><br><span class="line">      relabel_configs:</span><br><span class="line">      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]</span><br><span class="line">        action: keep</span><br><span class="line">        regex: true</span><br><span class="line">      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]</span><br><span class="line">        action: replace</span><br><span class="line">        target_label: __metrics_path__</span><br><span class="line">        regex: (.+)</span><br><span class="line">      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]</span><br><span class="line">        action: replace</span><br><span class="line">        regex: ([^:]+)(?::\d+)?;(\d+)</span><br><span class="line">        replacement: $1:$2</span><br><span class="line">        target_label: __address__</span><br><span class="line">      - action: labelmap</span><br><span class="line">        regex: __meta_kubernetes_pod_label_(.+)</span><br><span class="line">      - source_labels: [__meta_kubernetes_namespace]</span><br><span class="line">        action: replace</span><br><span class="line">        target_label: kubernetes_namespace</span><br><span class="line">      - source_labels: [__meta_kubernetes_pod_name]</span><br><span class="line">        action: replace</span><br><span class="line">        target_label: kubernetes_pod_name</span><br><span class="line"></span><br><span class="line">    - job_name: &#x27;kubernetes-services&#x27;</span><br><span class="line">      metrics_path: /probe</span><br><span class="line">      params:</span><br><span class="line">        module: [http_2xx]</span><br><span class="line">      kubernetes_sd_configs:</span><br><span class="line">      - role: service</span><br><span class="line">      relabel_configs:</span><br><span class="line">      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_probe]</span><br><span class="line">        action: keep</span><br><span class="line">        regex: true</span><br><span class="line">      - source_labels: [__address__]</span><br><span class="line">        target_label: __param_target</span><br><span class="line">      - target_label: __address__</span><br><span class="line">        replacement: blackbox</span><br><span class="line">      - source_labels: [__param_target]</span><br><span class="line">        target_label: instance</span><br><span class="line">      - action: labelmap</span><br><span class="line">        regex: __meta_kubernetes_service_label_(.+)</span><br><span class="line">      - source_labels: [__meta_kubernetes_namespace]</span><br><span class="line">        target_label: kubernetes_namespace</span><br><span class="line">      - source_labels: [__meta_kubernetes_service_name]</span><br><span class="line">        target_label: kubernetes_name</span><br><span class="line"></span><br><span class="line">    - job_name: &#x27;kubernetes-service-endpoints&#x27;</span><br><span class="line">      kubernetes_sd_configs:</span><br><span class="line">      - role: endpoints</span><br><span class="line">      relabel_configs:</span><br><span class="line">      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]</span><br><span class="line">        action: keep</span><br><span class="line">        regex: true</span><br><span class="line">      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]</span><br><span class="line">        action: replace</span><br><span class="line">        target_label: __scheme__</span><br><span class="line">        regex: (https?)</span><br><span class="line">      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]</span><br><span class="line">        action: replace</span><br><span class="line">        target_label: __metrics_path__</span><br><span class="line">        regex: (.+)</span><br><span class="line">      - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]</span><br><span class="line">        action: replace</span><br><span class="line">        target_label: __address__</span><br><span class="line">        regex: ([^:]+)(?::\d+)?;(\d+)</span><br><span class="line">        replacement: $1:$2</span><br><span class="line">      - action: labelmap</span><br><span class="line">        regex: __meta_kubernetes_service_label_(.+)</span><br><span class="line">      - source_labels: [__meta_kubernetes_namespace]</span><br><span class="line">        action: replace</span><br><span class="line">        target_label: kubernetes_namespace</span><br><span class="line">      - source_labels: [__meta_kubernetes_service_name]</span><br><span class="line">        action: replace</span><br><span class="line">        target_label: kubernetes_name</span><br></pre></td></tr></table></figure>
+<h3 id="设置prometheus-operator对consul的支持"><a href="#设置prometheus-operator对consul的支持" class="headerlink" title="设置prometheus-operator对consul的支持"></a>设置prometheus-operator对consul的支持</h3><p>operator为了提供灵活的prometheus配置。除了提供ServiceMonitor,还提供了<code>additionalScrapeConfigs</code>属性。对于consul的支持ServiceMonitor并不能实现。基于<code>additionalScrapeConfigs</code>的配置如下(<code>additionalScrapeConfigs</code>需要以secrets的形式存在于k8s中)。additional.yaml如下:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">data:</span><br><span class="line">  prometheus-additional.yaml: LSBqb2JfbmFtZTogJ2ZlZGVyYXRlJwogIHNjcmFwZV9pbnRlcnZhbDogMTVzCgogIGhvbm9yX2xhYmVsczogdHJ1ZQogIG1ldHJpY3NfcGF0aDogJy9mZWRlcmF0ZScKCiAgcGFyYW1zOgogICAgJ21hdGNoW10nOgogICAgLSAne2pvYj0icHJvbWV0aGV1cyJ9JwogICAgLSAne2pvYj0iY2Fkdmlzb3IifScKICAgIC0gJ3tqb2I9Im5vZGUtZXhwb3J0ZXIifScKCiAgY29uc3VsX3NkX2NvbmZpZ3M6CiAgICAgIC0gc2VydmVyOiAxMTEuMjMxLjIxNi43NDo4NTAwCiAgICAgICAgc2VydmljZXM6IFsid2lzZWNsb3VkLWFnZW50LXByb21ldGhldXMtMSJdCg==</span><br><span class="line">kind: Secret</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    managed-by: prometheus-operator</span><br><span class="line">  name: prometheus-k8s-new</span><br><span class="line">  namespace: monitoring</span><br></pre></td></tr></table></figure>
+<p>prometheus-prometheus.yaml需要做下改动:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: monitoring.coreos.com/v1</span><br><span class="line">kind: Prometheus</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    prometheus: k8s</span><br><span class="line">  name: k8s</span><br><span class="line">  namespace: monitoring</span><br><span class="line">spec:</span><br><span class="line">  alerting:</span><br><span class="line">    alertmanagers:</span><br><span class="line">    - name: alertmanager-main</span><br><span class="line">      namespace: monitoring</span><br><span class="line">      port: web</span><br><span class="line">  baseImage: 192.168.5.14/library/prometheus</span><br><span class="line">  nodeSelector:</span><br><span class="line">    beta.kubernetes.io/os: linux</span><br><span class="line">  replicas: 1</span><br><span class="line">  resources:</span><br><span class="line">    requests:</span><br><span class="line">      memory: 100Mi</span><br><span class="line">  ruleSelector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      prometheus: k8s</span><br><span class="line">      role: alert-rules</span><br><span class="line">  serviceAccountName: prometheus-k8s</span><br><span class="line">  serviceMonitorNamespaceSelector: &#123;&#125;</span><br><span class="line">  serviceMonitorSelector: &#123;&#125;</span><br><span class="line">  version: v2.3.1</span><br><span class="line">  additionalScrapeConfigs:</span><br><span class="line">    name: prometheus-k8s-new</span><br><span class="line">    key: prometheus-additional.yaml</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">// 部署</span><br><span class="line">kubectl apply -f additional.yaml prometheus-prometheus.yaml -n monitoring</span><br></pre></td></tr></table></figure>
+
+  </article>
+  <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  <div class="busuanzi center">
+    page PV:&nbsp;<span id="busuanzi_value_page_pv"></span>&nbsp;・&nbsp;
+    site PV:&nbsp;<span id="busuanzi_value_site_pv"></span>&nbsp;・&nbsp;
+    site UV:&nbsp;<span id="busuanzi_value_site_uv"></span>
+  </div>
+
+
+    
+
+
+
+
+
+    </div>
+  </div>
+  <footer class="page-footer"><div class="clearfix">
+</div>
+<div class="right-foot">
+    <div class="firstrow">
+        <a href="#top" target="_self">
+        <svg class="i-caret-right" viewBox="0 0 32 32" width="24" height="24" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
+            <path d="M10 30 L26 16 10 2 Z"></path>
+        </svg>
+        </a>
+        © XXX 2016-2020
+    </div>
+    <div class="secondrow">
+        <a target="_blank" rel="noopener" href="https://github.com/gaoryrt/hexo-theme-pln">
+        Theme Pln
+        </a>
+    </div>
+</div>
+<div class="clearfix">
+</div>
+</footer>
+  <script src="//cdn.bootcss.com/jquery/2.2.1/jquery.min.js"></script>
+<script src="/js/search.min.js"></script>
+<script type="text/javascript">
+
+// disqus scripts
+
+
+// dropdown scripts
+$(".dropdown").click(function(event) {
+  var current = $(this);
+  event.stopPropagation();
+  $(current).children(".dropdown-content")[($(current).children(".dropdown-content").hasClass("open"))?'removeClass':'addClass']("open")
+});
+$(document).click(function(){
+    $(".dropdown-content").removeClass("open");
+})
+
+var path = "/search.xml";
+searchFunc(path, 'local-search-input', 'local-search-result');
+
+</script>
+
+</body>
+</html>

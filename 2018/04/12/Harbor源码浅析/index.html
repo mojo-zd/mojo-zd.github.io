@@ -1,0 +1,216 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="google-site-verification" content="" />
+  <meta name="referrer" content="unsafe-url">
+  
+  <title>Harbor源码浅析</title>
+  <meta name="author" content="John Doe">
+  <meta name="description" content="之前写过一篇Harbor的介绍短文，这篇文章对Harbor源码进行了粗略的解析，希望能对Harbor进行扩展的朋友提供帮助，如果不当之处还望指点。本文主要从以下几点对Harbor源码做简单解析
+
+源码结构
+环境管理
+容器管理
+扩展auth,实现sso功能
+jobservice源码结构12345678">
+  
+  
+  <meta property="og:title" content="Harbor源码浅析"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:site_name" content="Hexo"/>
+  <link href="/apple-touch-icon-precomposed.png" sizes="180x180" rel="apple-touch-icon-precomposed">
+  <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/m.min.css">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML" async></script>
+
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+<body>
+  <a id="top"></a>
+  <div id="main">
+    <div class="main-ctnr">
+      <div class="behind">
+  <a href="/" class="back black-color">
+    <svg class="i-close" viewBox="0 0 32 32" width="22" height="22" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
+        <path d="M2 30 L30 2 M30 30 L2 2"></path>
+    </svg>
+  </a>
+  
+</div>
+
+
+  <article class="standard post">
+    <div class="title">
+      
+  
+    <h1 class="page-title center">
+        Harbor源码浅析
+    </h1>
+  
+
+
+    </div>
+    <div class="meta center">
+      <time datetime="2018-04-12T09:13:10.000Z" itemprop="datePublished">
+  <svg class="i-calendar" viewBox="0 0 32 32" width="16" height="16" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+    <path d="M2 6 L2 30 30 30 30 6 Z M2 15 L30 15 M7 3 L7 9 M13 3 L13 9 M19 3 L19 9 M25 3 L25 9"></path>
+  </svg>
+  &nbsp;
+  2018-04-12
+</time>
+
+
+    
+    &nbsp;
+    <svg class="i-tag" viewBox="0 0 32 32" width="16" height="16" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+      <circle cx="24" cy="8" r="2"></circle>
+      <path d="M2 18 L18 2 30 2 30 14 14 30 Z"></path>
+    </svg>
+    &nbsp;
+    <a href="/categories/math/">math</a>
+
+
+
+
+    
+    &nbsp;
+    <svg class="i-tag" viewBox="0 0 32 32" width="16" height="16" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+      <circle cx="24" cy="8" r="2"></circle>
+      <path d="M2 18 L18 2 30 2 30 14 14 30 Z"></path>
+    </svg>
+    &nbsp;
+    <a href="/tags/registry/">registry</a>
+
+
+    </div>
+    <hr>
+    
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%BA%90%E7%A0%81%E7%BB%93%E6%9E%84"><span class="toc-text">源码结构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%8E%AF%E5%A2%83%E7%AE%A1%E7%90%86"><span class="toc-text">环境管理</span></a></li></ol>
+    
+    <div class="picture-container">
+      
+    </div>
+    <p>之前写过一篇Harbor的介绍短文，这篇文章对Harbor源码进行了粗略的解析，希望能对Harbor进行扩展的朋友提供帮助，如果不当之处还望指点。<br>本文主要从以下几点对Harbor源码做简单解析</p>
+<ul>
+<li>源码结构</li>
+<li>环境管理</li>
+<li>容器管理</li>
+<li>扩展auth,实现sso功能</li>
+<li>jobservice<h3 id="源码结构"><a href="#源码结构" class="headerlink" title="源码结构"></a>源码结构</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">| – api (Harbor提供的外部调用的API)</span><br><span class="line">| – auth (认证模块，目前提供两种方式：数据库和LDAP)</span><br><span class="line">| – controllers (控制器相关代码)</span><br><span class="line">| – common (公用模块,包含数据库映射的模型代码、数据持久层、工具类)</span><br><span class="line">| - jobservice(多个Harbor实例之前复制的任务管理模块)</span><br><span class="line">| – make (生成配置、构建镜像)</span><br><span class="line">| – docs (文档)</span><br><span class="line">| – routers (路由相关代码)</span><br><span class="line">| – notification.go (接受Registry发来的镜像上传或下载等事件)</span><br><span class="line">| – token.go (为Registry提供鉴权服务)</span><br><span class="line">| – static (js、css等文件)</span><br><span class="line">| – vendor (依赖的第三方源码)</span><br><span class="line">| – views (html模版文件)</span><br><span class="line">| – main.go (入口函数)</span><br></pre></td></tr></table></figure>
+Harbor的工作流程如下图所示<br><img src="http://ofp4ip1ms.bkt.clouddn.com/harbor.png" alt="image"></li>
+</ul>
+<h3 id="环境管理"><a href="#环境管理" class="headerlink" title="环境管理"></a>环境管理</h3><p>Harbor各个容器运行所需部分变量是通过写入环境变量来实现的,当然如果你要对源码进行更改也可以加入自己的配置文件。如:增加app.conf配置文件。在harbor源码中,你会发现在harbor根目录下有一个make目录, make目录下定义了一系列的脚本文件prepare、模板文件(make&#x2F;common&#x2F;templates)、基础配置文件(harbor.cfg)。</p>
+<p>开发者通过执行prepare脚本会生成docker容器所需的文件。生成文件如下。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">config_dir dir is</span><br><span class="line">./common/config</span><br><span class="line">loaded secret key</span><br><span class="line">Clearing the configuration file: ./common/config/ui/env</span><br><span class="line">Clearing the configuration file: ./common/config/registry/config.yml</span><br><span class="line">Clearing the configuration file: ./common/config/db/env</span><br><span class="line">Clearing the configuration file: ./common/config/jobservice/env</span><br><span class="line">Clearing the configuration file: ./common/config/nginx/nginx.conf</span><br><span class="line">Generated configuration file: ./common/config/nginx/nginx.conf(nginx配置文件)</span><br><span class="line">Generated configuration file: ./common/config/ui/env(运行ui所需的环境变量)</span><br><span class="line">Generated configuration file: ./common/config/registry/config.yml(运行registry容器所需配置)</span><br><span class="line">Generated configuration file: ./common/config/db/env(数据库环境变量)</span><br><span class="line">Generated configuration file: ./common/config/jobservice/env(jobservice环境变量)</span><br><span class="line">Clearing the configuration file: ./common/config/ui/private_key.pem</span><br><span class="line">Clearing the configuration file: ./common/config/registry/root.crt</span><br><span class="line">Generated configuration file: ./common/config/ui/private_key.pem(registry私有文件)</span><br><span class="line">Generated configuration file: ./common/config/registry/root.crt(registry密钥文件)</span><br><span class="line">The configuration files are ready, please use docker-compose to start the service.</span><br></pre></td></tr></table></figure>
+<p>下面对主要的几个配置文件进行简单介绍一下。</p>
+<ul>
+<li><p>ngnix.conf(上篇文章提到了harbor支持http和https两种协议,下面以http为例)</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><span class="line">worker_processes auto;</span><br><span class="line">events &#123;</span><br><span class="line">  worker_connections 1024;</span><br><span class="line">  use epoll;</span><br><span class="line">  multi_accept on;</span><br><span class="line">&#125;</span><br><span class="line">http &#123;</span><br><span class="line">  tcp_nodelay on;</span><br><span class="line">  # this is necessary for us to be able to disable request buffering in all cases</span><br><span class="line">  proxy_http_version 1.1;</span><br><span class="line">  upstream registry &#123;</span><br><span class="line">    server 10.0.0.36:5000;</span><br><span class="line">  &#125;</span><br><span class="line">  upstream ui &#123;</span><br><span class="line">    server 10.0.0.36:8080;</span><br><span class="line">  &#125;</span><br><span class="line">  server &#123;</span><br><span class="line">    listen 80;</span><br><span class="line">    # disable any limits to avoid HTTP 413 for large image uploads</span><br><span class="line">    client_max_body_size 0;</span><br><span class="line">    location / &#123;</span><br><span class="line">      proxy_pass http://ui/;</span><br><span class="line">      proxy_set_header Host $host;</span><br><span class="line">      proxy_set_header X-Real-IP $remote_addr;</span><br><span class="line">      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;</span><br><span class="line">      </span><br><span class="line">      # When setting up Harbor behind other proxy, such as an Nginx instance, remove the below line if the proxy already has similar settings.</span><br><span class="line">      proxy_set_header X-Forwarded-Proto $scheme;</span><br><span class="line">      proxy_buffering off;</span><br><span class="line">      proxy_request_buffering off;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    location /v1/ &#123;</span><br><span class="line">      return 404;</span><br><span class="line">    &#125;</span><br><span class="line">    location /v2/ &#123;</span><br><span class="line">      proxy_pass http://registry/v2/;</span><br><span class="line">      proxy_set_header Host $http_host;</span><br><span class="line">      proxy_set_header X-Real-IP $remote_addr;</span><br><span class="line">      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;</span><br><span class="line">      # When setting up Harbor behind other proxy, such as an Nginx instance, remove the below line if the proxy already has similar settings.</span><br><span class="line">      proxy_set_header X-Forwarded-Proto $scheme;</span><br><span class="line">      </span><br><span class="line">      proxy_buffering off;</span><br><span class="line">      proxy_request_buffering off;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    location /service/ &#123;</span><br><span class="line">      proxy_pass http://ui/service/;</span><br><span class="line">      proxy_set_header Host $host;</span><br><span class="line">      proxy_set_header X-Real-IP $remote_addr;</span><br><span class="line">      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;</span><br><span class="line">      </span><br><span class="line">      # When setting up Harbor behind other proxy, such as an Nginx instance, remove the below line if the proxy already has similar settings.</span><br><span class="line">      proxy_set_header X-Forwarded-Proto $scheme;</span><br><span class="line">      </span><br><span class="line">      proxy_buffering off;</span><br><span class="line">      proxy_request_buffering off;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>大家可能注意到上面的upstream registry、upstream ui了。这里的配置代理了registry、harbor ui。当请求通过80端口访问时,如果地址是&#x2F;*、&#x2F;server&#x2F;*地址时,直接转发到ui服务。同样的拦截的到&#x2F;v2&#x2F;*将转发到registry服务。</p>
+</li>
+<li><p>registry服务的配置config.yml</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">version: 0.1</span><br><span class="line">log:</span><br><span class="line">  level: debug</span><br><span class="line">  fields:</span><br><span class="line">    service: registry</span><br><span class="line">storage:</span><br><span class="line">    cache:</span><br><span class="line">        layerinfo: inmemory</span><br><span class="line">    filesystem:</span><br><span class="line">        rootdirectory: /storage</span><br><span class="line">    maintenance:</span><br><span class="line">        uploadpurging:</span><br><span class="line">            enabled: false</span><br><span class="line">    delete:</span><br><span class="line">        enabled: true</span><br><span class="line">http:</span><br><span class="line">    addr: :5000</span><br><span class="line">    secret: placeholder</span><br><span class="line">    debug:</span><br><span class="line">        addr: localhost:5001</span><br><span class="line">auth:</span><br><span class="line">  token:</span><br><span class="line">    issuer: registry-token-issuer</span><br><span class="line">    realm: http://10.0.0.36:8080/service/token</span><br><span class="line">    rootcertbundle: /etc/registry/root.crt</span><br><span class="line">    service: token-service</span><br><span class="line"></span><br><span class="line">notifications:</span><br><span class="line">  endpoints:</span><br><span class="line">      - name: harbor</span><br><span class="line">        disabled: false</span><br><span class="line">        url: http://10.0.0.36:8080/service/notifications</span><br><span class="line">        timeout: 3000ms</span><br><span class="line">        threshold: 5</span><br><span class="line">        backoff: 1s</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>上面的核心配置为auth部分,auth中指定了token验证服务地址–&gt;<a target="_blank" rel="noopener" href="http://10.0.0.36:8080/service/token%E3%80%82">http://10.0.0.36:8080/service/token。</a> 另外notifications部分的配置用于监听registry的相关事件,如：docker push 、docker pull等等。docker deaman会把相关的image的信息都传递到指定的API。这样用户便可以把相关的数据同步到自己的数据库中。 Harbor的token验证服务和docker事件通知监听都设计在harbor的ui中。分配对应src&#x2F;ui&#x2F;service&#x2F;token.go、src&#x2F;ui&#x2F;service&#x2F;notification.go文件。有兴趣</p>
+</li>
+<li><p>ui的配置env文件</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">MYSQL_HOST=mysql</span><br><span class="line">MYSQL_PORT=3306</span><br><span class="line">MYSQL_USR=root</span><br><span class="line">MYSQL_PWD=root123</span><br><span class="line">REGISTRY_URL=http://registry:5000</span><br><span class="line">UI_URL=http://ui</span><br><span class="line">CONFIG_PATH=/etc/ui/app.conf</span><br><span class="line">HARBOR_REG_URL=10.0.0.36</span><br><span class="line">HARBOR_ADMIN_PASSWORD=Harbor12345</span><br><span class="line">HARBOR_URL=http://10.0.0.36</span><br><span class="line">AUTH_MODE=db_auth</span><br><span class="line">LDAP_URL=ldaps://ldap.mydomain.com</span><br><span class="line">LDAP_SEARCH_DN=</span><br><span class="line">LDAP_SEARCH_PWD=</span><br><span class="line">LDAP_BASE_DN=ou=people,dc=mydomain,dc=com</span><br><span class="line">LDAP_FILTER=</span><br><span class="line">LDAP_UID=uid</span><br><span class="line">LDAP_SCOPE=3</span><br><span class="line">UI_SECRET=hZIaQRP3RpTuiw7Y</span><br><span class="line">SECRET_KEY=J7qdtDfl30NbrRw4</span><br><span class="line">SELF_REGISTRATION=on</span><br><span class="line">USE_COMPRESSED_JS=on</span><br><span class="line">LOG_LEVEL=debug</span><br><span class="line">GODEBUG=netdns=cgo</span><br><span class="line">EXT_ENDPOINT=http://10.0.0.36</span><br><span class="line">TOKEN_URL=http://ui</span><br><span class="line">VERIFY_REMOTE_CERT=on</span><br><span class="line">TOKEN_EXPIRATION=30</span><br></pre></td></tr></table></figure>
+<p>ui的env配置位于make&#x2F;common&#x2F;config&#x2F;ui下。这里的变量浅显易懂我就不多介绍了,jobservice同样的处理。</p>
+</li>
+<li><p>容器管理<br>如基于Harbor源码打包成最终的Docker镜像。请看下面的几个例子。</p>
+</li>
+</ul>
+<ol>
+<li>ngnix镜像文件。(最简单的Dockerfile)<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">FROM library/nginx:1.11.5</span><br><span class="line"></span><br><span class="line">MAINTAINER mojo_ma@wise2c.com</span><br><span class="line"></span><br><span class="line">COPY make/common/config/nginx /etc/nginx</span><br></pre></td></tr></table></figure>
+把执行prepare生成的ngnix相关配置拷贝到镜像中,并基于ngnix:1.11.5做成的ngnix镜像</li>
+<li>ui镜像文件<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">FROM golang:1.6.2</span><br><span class="line"></span><br><span class="line">MAINTAINER jiangd@vmware.com</span><br><span class="line"></span><br><span class="line">RUN apt-get update \</span><br><span class="line">    &amp;&amp; apt-get install -y libldap2-dev \</span><br><span class="line">    &amp;&amp; rm -r /var/lib/apt/lists/*</span><br><span class="line"></span><br><span class="line">COPY src/. /go/src/github.com/vmware/harbor/src</span><br><span class="line">COPY make/common/config/ui/private_key.pem /etc/ui/private_key.pem</span><br><span class="line">WORKDIR /go/src/github.com/vmware/harbor/src/ui</span><br><span class="line">RUN go build -v -a -o /go/bin/harbor_ui</span><br><span class="line"></span><br><span class="line">COPY src/ui/views /go/bin/views</span><br><span class="line">COPY src/ui/static /go/bin/static</span><br><span class="line">COPY src/ui/conf  /go/bin/conf</span><br><span class="line">COPY src/favicon.ico /go/bin/favicon.ico</span><br><span class="line">COPY make/jsminify.sh /tmp/jsminify.sh</span><br><span class="line"></span><br><span class="line">RUN chmod u+x /go/bin/harbor_ui \</span><br><span class="line">    &amp;&amp; sed -i &#x27;s/TLS_CACERT/#TLS_CAERT/g&#x27; /etc/ldap/ldap.conf \</span><br><span class="line">    &amp;&amp; sed -i &#x27;$a\TLS_REQCERT allow&#x27; /etc/ldap/ldap.conf \</span><br><span class="line">    &amp;&amp; /tmp/jsminify.sh /go/bin/views/sections/script-include.htm /go/bin/static/resources/js/harbor.app.min.js /go/bin/</span><br><span class="line"></span><br><span class="line">WORKDIR /go/bin/</span><br><span class="line">ENTRYPOINT [&quot;/go/bin/harbor_ui&quot;]</span><br></pre></td></tr></table></figure>
+这个文件稍微复杂一点。只是步骤多了一点而已。本镜像的基础镜像为golang:1.6.2。</li>
+<li>RUN apt-get update <br> &amp;&amp; apt-get install -y libldap2-dev <br> &amp;&amp; rm -r &#x2F;var&#x2F;lib&#x2F;apt&#x2F;lists&#x2F;* 更新系统 </li>
+<li>COPY src&#x2F;. &#x2F;go&#x2F;src&#x2F;github.com&#x2F;vmware&#x2F;harbor&#x2F;src 拷贝源码到镜像仓库指定目录</li>
+<li>COPY make&#x2F;common&#x2F;config&#x2F;ui&#x2F;private_key.pem &#x2F;etc&#x2F;ui&#x2F;private_key.pem 拷贝私钥文件到镜像中（）</li>
+<li>WORKDIR &#x2F;go&#x2F;src&#x2F;github.com&#x2F;vmware&#x2F;harbor&#x2F;src&#x2F;ui设定docker的工作目录</li>
+<li>RUN go build -v -a -o &#x2F;go&#x2F;bin&#x2F;harbor_ui 根据源码构建可执行文件</li>
+<li>COPY src&#x2F;ui&#x2F;views &#x2F;go&#x2F;bin&#x2F;views<br>COPY src&#x2F;ui&#x2F;static &#x2F;go&#x2F;bin&#x2F;static<br>COPY src&#x2F;ui&#x2F;conf  &#x2F;go&#x2F;bin&#x2F;conf<br>COPY src&#x2F;favicon.ico &#x2F;go&#x2F;bin&#x2F;favicon.ico<br>COPY make&#x2F;jsminify.sh &#x2F;tmp&#x2F;jsminify.sh  拷贝相应的静态资源到容器。</li>
+<li>WORKDIR &#x2F;go&#x2F;bin&#x2F;<br>ENTRYPOINT [“&#x2F;go&#x2F;bin&#x2F;harbor_ui”] 指定工作目录并执行生成的可执行文件</li>
+</ol>
+<p>根据上面定义的一系列Dockerfile文件,执行make&#x2F;dev下的docker-compose build 就会打包最终的docker image。进而通过docker-compose up -d、docker-compose down来管理容器的起停。</p>
+<ul>
+<li>扩展auth,实现sso功能<br>Harbor中认证模块做了抽象处理,只要实现了指定的接口,并在配置文件中指定对应的认证模式便可以轻松实现自己新增认证需求。下面以我们项目实现的sso认证为例。</li>
+</ul>
+<p>默认情况下Harbor提供了db_auth、ldap_auth。为了增加sso功能。我们新加了一个sso_auth。这些auth逻辑都在src&#x2F;ui&#x2F;auth目录下。<br>下面是实现sso_auth的部分代码</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">type Auth struct&#123;&#125;</span><br><span class="line"></span><br><span class="line">//实现Authenticate方法</span><br><span class="line">func (auth *Auth) Authenticate(m models.AuthModel) (*models.User, error) &#123;</span><br><span class="line">    //Principal is the sso samlart</span><br><span class="line">    query := soap.BuildSamlValidateQuery(m.Principal)</span><br><span class="line">    url := fmt.Sprintf(&quot;%s/samlValidate?TARGET=%s/callback&quot;, loader.CAS_SERVER, loader.HARBOR_URL)</span><br><span class="line">    envelope, err := soap.GetSoapEnvelope(url, query)</span><br><span class="line">    if err != nil &#123;</span><br><span class="line">        log.Error(&quot;Fail to get CAS info:&quot; + err.Error())</span><br><span class="line">        return &amp;models.User&#123;&#125;, errors.New(&quot;Failed to get CAS info&quot;)</span><br><span class="line">    &#125;</span><br><span class="line">    var user *models.User</span><br><span class="line">    count, err := dao.GetKeystoneUserCount()</span><br><span class="line">    if err != nil &#123;</span><br><span class="line">        log.Errorf(&quot;get account occured error %v&quot;, err)</span><br><span class="line">        return user, errors.New(&quot;get account from db failed!&quot;)</span><br><span class="line">    &#125;</span><br><span class="line">    user, err = getUserFromSoapEnvelope(envelope)</span><br><span class="line">    return user, err</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// 解析sso获取到的用户 并添加到数据库</span><br><span class="line">func getUserFromSoapEnvelope(envelope *soap.SoapEnvelope) (*models.User, error) &#123;</span><br><span class="line">    username := envelope.Body.Response.Assertion.AttributeStatement.Subject.UserName</span><br><span class="line">    var user *models.User</span><br><span class="line">    var externalID string</span><br><span class="line">    var tenantID string</span><br><span class="line">    var tenantName string</span><br><span class="line">    attributes := envelope.Body.Response.Assertion.AttributeStatement.Attributes</span><br><span class="line">    for _, attribute := range attributes &#123;</span><br><span class="line">        switch attribute.Key &#123;</span><br><span class="line">        case &quot;uid&quot;:</span><br><span class="line">            externalID = attribute.Value</span><br><span class="line">        case &quot;project_id&quot;:</span><br><span class="line">            tenantID = attribute.Value</span><br><span class="line">        case &quot;project_name&quot;:</span><br><span class="line">            tenantName = attribute.Value</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    var err error</span><br><span class="line">    newUser := models.User&#123;Username: username, TenantName: tenantName, TenantId: tenantID&#125;</span><br><span class="line">    if user, err = dao.GetUserByKeystone(externalID); err == orm.ErrNoRows &#123; </span><br><span class="line">        newUser.KeystoneId = externalID</span><br><span class="line">        dao.Register(newUser)</span><br><span class="line">        return &amp;newUser, err</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    return user, err</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// 注册sso_auth</span><br><span class="line">func init() &#123;</span><br><span class="line">    auth.Register(&quot;sso_auth&quot;, &amp;Auth&#123;&#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>另外看一下Harbor的登录逻辑代码</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">var authMode = loader.AUTH_MODE //读取配置确认配置的是那种认证模式</span><br><span class="line">    if authMode == &quot;&quot; &#123;</span><br><span class="line">        authMode = &quot;db_auth&quot;</span><br><span class="line">    &#125;</span><br><span class="line">    log.Debug(&quot;Current AUTH_MODE is &quot;, authMode)</span><br><span class="line">    authenticator, ok := registry[authMode] //取出之前auth.Register的auth对象。</span><br><span class="line">    if !ok &#123;</span><br><span class="line">        return nil, fmt.Errorf(&quot;Unrecognized auth_mode: %s&quot;, authMode)</span><br><span class="line">    &#125;</span><br><span class="line">    if lock.IsLocked(m.Principal) &#123;</span><br><span class="line">        log.Debugf(&quot;%s is locked due to login failure, login failed&quot;, m.Principal)</span><br><span class="line">        return nil, nil</span><br><span class="line">    &#125;</span><br><span class="line">    user, err := authenticator.Authenticate(m) //执行认证逻辑</span><br><span class="line">    if user == nil &amp;&amp; err == nil &#123;</span><br><span class="line">        log.Debugf(&quot;Login failed, locking %s, and sleep for %v&quot;, m.Principal, frozenTime)</span><br><span class="line">        lock.Lock(m.Principal)</span><br><span class="line">        time.Sleep(frozenTime)</span><br><span class="line">    &#125;</span><br><span class="line">    return user, err</span><br></pre></td></tr></table></figure>
+<p>就这么简单，一个新增的认证模块就完成了。</p>
+<ul>
+<li>jobservice</li>
+</ul>
+<p>jobservice只做了Harbor多个实例进行复制的任务处理逻辑。jobservice对外只提供了复制的接口，仅供ui模块使用。针对jobservice执行的job运行状态主要包括以下几种pending,running,retry,error,stopped,finished,canceled。pending。当启动jobservice服务时候系统会查询数据库中retry状态的job。并重新启动job。如果job一直未完成,每隔一段时间retry状态的job就会尝试继续向目标机上同步镜像。当然运行中的job也可以通过发送stop类型的action给bservice来停止job。</p>
+<p>以上是我对Harbor的个人理解。如果有什么不妥之处,还望多多吐槽。</p>
+
+
+  </article>
+  <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  <div class="busuanzi center">
+    page PV:&nbsp;<span id="busuanzi_value_page_pv"></span>&nbsp;・&nbsp;
+    site PV:&nbsp;<span id="busuanzi_value_site_pv"></span>&nbsp;・&nbsp;
+    site UV:&nbsp;<span id="busuanzi_value_site_uv"></span>
+  </div>
+
+
+    
+
+
+
+
+
+    </div>
+  </div>
+  <footer class="page-footer"><div class="clearfix">
+</div>
+<div class="right-foot">
+    <div class="firstrow">
+        <a href="#top" target="_self">
+        <svg class="i-caret-right" viewBox="0 0 32 32" width="24" height="24" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
+            <path d="M10 30 L26 16 10 2 Z"></path>
+        </svg>
+        </a>
+        © XXX 2016-2020
+    </div>
+    <div class="secondrow">
+        <a target="_blank" rel="noopener" href="https://github.com/gaoryrt/hexo-theme-pln">
+        Theme Pln
+        </a>
+    </div>
+</div>
+<div class="clearfix">
+</div>
+</footer>
+  <script src="//cdn.bootcss.com/jquery/2.2.1/jquery.min.js"></script>
+<script src="/js/search.min.js"></script>
+<script type="text/javascript">
+
+// disqus scripts
+
+
+// dropdown scripts
+$(".dropdown").click(function(event) {
+  var current = $(this);
+  event.stopPropagation();
+  $(current).children(".dropdown-content")[($(current).children(".dropdown-content").hasClass("open"))?'removeClass':'addClass']("open")
+});
+$(document).click(function(){
+    $(".dropdown-content").removeClass("open");
+})
+
+var path = "/search.xml";
+searchFunc(path, 'local-search-input', 'local-search-result');
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="google-site-verification" content="" />
+  <meta name="referrer" content="unsafe-url">
+  
+  <title>golang project layout</title>
+  <meta name="author" content="John Doe">
+  <meta name="description" content="概述在go项目的开发中很多developer并没有真正关心项目的layout规范。在最近维护的代码中体会颇深。项目结构混乱,文件随意定义,维护起来相当痛苦。为项目维护增加了很高的维护成本。
+Go Directories声明&amp;#x2F;cmd项目的主程序入口,每个应用程序的目录名称应与你想要执行文件的">
+  
+  
+  <meta property="og:title" content="golang project layout"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:site_name" content="Hexo"/>
+  <link href="/apple-touch-icon-precomposed.png" sizes="180x180" rel="apple-touch-icon-precomposed">
+  <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/m.min.css">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML" async></script>
+
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+<body>
+  <a id="top"></a>
+  <div id="main">
+    <div class="main-ctnr">
+      <div class="behind">
+  <a href="/" class="back black-color">
+    <svg class="i-close" viewBox="0 0 32 32" width="22" height="22" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
+        <path d="M2 30 L30 2 M30 30 L2 2"></path>
+    </svg>
+  </a>
+  
+</div>
+
+
+  <article class="standard post">
+    <div class="title">
+      
+  
+    <h1 class="page-title center">
+        golang project layout
+    </h1>
+  
+
+
+    </div>
+    <div class="meta center">
+      <time datetime="2018-06-11T09:32:10.000Z" itemprop="datePublished">
+  <svg class="i-calendar" viewBox="0 0 32 32" width="16" height="16" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+    <path d="M2 6 L2 30 30 30 30 6 Z M2 15 L30 15 M7 3 L7 9 M13 3 L13 9 M19 3 L19 9 M25 3 L25 9"></path>
+  </svg>
+  &nbsp;
+  2018-06-11
+</time>
+
+
+
+
+
+    
+    &nbsp;
+    <svg class="i-tag" viewBox="0 0 32 32" width="16" height="16" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+      <circle cx="24" cy="8" r="2"></circle>
+      <path d="M2 18 L18 2 30 2 30 14 14 30 Z"></path>
+    </svg>
+    &nbsp;
+    <a href="/tags/golang/">golang</a>
+
+
+    </div>
+    <hr>
+    
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A6%82%E8%BF%B0"><span class="toc-text">概述</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Go-Directories%E5%A3%B0%E6%98%8E"><span class="toc-text">Go Directories声明</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#x2F-cmd"><span class="toc-text">&#x2F;cmd</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#x2F-internal"><span class="toc-text">&#x2F;internal</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#x2F-pkg"><span class="toc-text">&#x2F;pkg</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#x2F-vendor"><span class="toc-text">&#x2F;vendor</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Service-Application-Directories"><span class="toc-text">Service Application Directories</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#x2F-api"><span class="toc-text">&#x2F;api</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Web-Application-Directories"><span class="toc-text">Web Application Directories</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#x2F-web"><span class="toc-text">&#x2F;web</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Common-Application-Directories"><span class="toc-text">Common Application Directories</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#x2F-configs"><span class="toc-text">&#x2F;configs</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#x2F-init"><span class="toc-text">&#x2F;init</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#x2F-scripts"><span class="toc-text">&#x2F;scripts</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#x2F-build"><span class="toc-text">&#x2F;build</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#x2F-deployments"><span class="toc-text">&#x2F;deployments</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#x2F-test"><span class="toc-text">&#x2F;test</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Other-Directories"><span class="toc-text">Other Directories</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#x2F-docs"><span class="toc-text">&#x2F;docs</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#x2F-examples"><span class="toc-text">&#x2F;examples</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#x2F-third-party"><span class="toc-text">&#x2F;third_party</span></a></li></ol></li></ol>
+    
+    <div class="picture-container">
+      
+    </div>
+    <h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><p>在go项目的开发中很多developer并没有真正关心项目的layout规范。在最近维护的代码中体会颇深。项目结构混乱,文件随意定义,维护起来相当痛苦。为项目维护增加了很高的维护成本。</p>
+<h3 id="Go-Directories声明"><a href="#Go-Directories声明" class="headerlink" title="Go Directories声明"></a>Go Directories声明</h3><h4 id="x2F-cmd"><a href="#x2F-cmd" class="headerlink" title="&#x2F;cmd"></a>&#x2F;cmd</h4><p>项目的主程序入口,每个应用程序的目录名称应与你想要执行文件的名称相匹配(eg:&#x2F;cmd&#x2F;myapp)。</p>
+<p>最好不要把太多代码放到该目录下,如果你觉得你的代码需要被其他模块引用或者被其他项目引用你应该把这类代码放到&#x2F;pkg目录下。如果你的代码不会被重复使用也不想被其他项目引用,那么你应该将这类代码放到&#x2F;internal目录。</p>
+<p>&#x2F;cmd目录使用可以参考一下这些<a target="_blank" rel="noopener" href="https://github.com/golang-standards/project-layout/blob/master/cmd/README.md">示例项目</a></p>
+<h4 id="x2F-internal"><a href="#x2F-internal" class="headerlink" title="&#x2F;internal"></a>&#x2F;internal</h4><p>该目录主要存放项目的私有代码,这些代码不会被其他应用程序或者库所引用。正常来讲项目的实际代码应该放在&#x2F;internal&#x2F;app目录下(eg:&#x2F;internal&#x2F;app&#x2F;myapp)。该目录下共享的代码应该放在&#x2F;internal&#x2F;pkg下(eg:&#x2F;internal&#x2F;pkg&#x2F;myprivlib)。</p>
+<h4 id="x2F-pkg"><a href="#x2F-pkg" class="headerlink" title="&#x2F;pkg"></a>&#x2F;pkg</h4><p>此目录下的代码可以被其他应用程序导入使用(eg:&#x2F;pkg&#x2F;mypubliclib)。&#x2F;pkg<a target="_blank" rel="noopener" href="https://github.com/golang-standards/project-layout/blob/master/pkg/README.md">示例项目</a></p>
+<h4 id="x2F-vendor"><a href="#x2F-vendor" class="headerlink" title="&#x2F;vendor"></a>&#x2F;vendor</h4><p>应用依赖(通过你喜欢的项目依赖管理工具来管理),如果你是构建一个通用的libaray建议不要提交相应的应用依赖。</p>
+<h3 id="Service-Application-Directories"><a href="#Service-Application-Directories" class="headerlink" title="Service Application Directories"></a>Service Application Directories</h3><h4 id="x2F-api"><a href="#x2F-api" class="headerlink" title="&#x2F;api"></a>&#x2F;api</h4><p>OpenAPI&#x2F;Swagger规范, Json schema文件, protocol定义文件<br>参考<a target="_blank" rel="noopener" href="https://github.com/golang-standards/project-layout/blob/master/api/README.md">示例</a></p>
+<h3 id="Web-Application-Directories"><a href="#Web-Application-Directories" class="headerlink" title="Web Application Directories"></a>Web Application Directories</h3><h4 id="x2F-web"><a href="#x2F-web" class="headerlink" title="&#x2F;web"></a>&#x2F;web</h4><p>Web项目特定组件 eg:static web assets, server side templates and SPAs</p>
+<h3 id="Common-Application-Directories"><a href="#Common-Application-Directories" class="headerlink" title="Common Application Directories"></a>Common Application Directories</h3><h4 id="x2F-configs"><a href="#x2F-configs" class="headerlink" title="&#x2F;configs"></a>&#x2F;configs</h4><p>配置模板或者默认配置</p>
+<h4 id="x2F-init"><a href="#x2F-init" class="headerlink" title="&#x2F;init"></a>&#x2F;init</h4><p>System init (systemd, upstart, sysv) and process manager&#x2F;supervisor (runit, supervisord) configs.</p>
+<h4 id="x2F-scripts"><a href="#x2F-scripts" class="headerlink" title="&#x2F;scripts"></a>&#x2F;scripts</h4><p>执行各种脚本,如 build, install, analysis, etc operations</p>
+<p>像Makefile这种应该放在根目录下(eg:<a target="_blank" rel="noopener" href="https://github.com/hashicorp/terraform/blob/master/Makefile">https://github.com/hashicorp/terraform/blob/master/Makefile</a>).</p>
+<p>&#x2F;scripts相关<a target="_blank" rel="noopener" href="https://github.com/golang-standards/project-layout/blob/master/scripts/README.md">示例</a></p>
+<h4 id="x2F-build"><a href="#x2F-build" class="headerlink" title="&#x2F;build"></a>&#x2F;build</h4><p>打包&amp;CI</p>
+<p>把例如cloud(AMI), container(Docker),OS(deb, rpm, pkg) 打包配置和脚本放在 &#x2F;build&#x2F;pakcage目录 </p>
+<p>把CI(travis, circle, drone)配置和脚本放到&#x2F;build&#x2F;ci目录</p>
+<h4 id="x2F-deployments"><a href="#x2F-deployments" class="headerlink" title="&#x2F;deployments"></a>&#x2F;deployments</h4><p>IaaS, PaaS, system and container orchestration deployment configurations and templates (docker-compose, kubernetes&#x2F;helm, mesos, terraform, bosh).</p>
+<h3 id="x2F-test"><a href="#x2F-test" class="headerlink" title="&#x2F;test"></a>&#x2F;test</h3><p>Additional external test apps and test data. Feel free to structure the &#x2F;test directory anyway you want. For bigger projects it makes sense to have a data subdirectory (e.g., &#x2F;test&#x2F;data).</p>
+<p>See the <a target="_blank" rel="noopener" href="https://github.com/golang-standards/project-layout/blob/master/test/README.md">&#x2F;test</a> directory for examples</p>
+<h3 id="Other-Directories"><a href="#Other-Directories" class="headerlink" title="Other Directories"></a>Other Directories</h3><h4 id="x2F-docs"><a href="#x2F-docs" class="headerlink" title="&#x2F;docs"></a>&#x2F;docs</h4><p>设计&amp;用户文档,另外你的godoc生成的目录也是放在该目录下</p>
+<p>&#x2F;docs <a target="_blank" rel="noopener" href="https://github.com/golang-standards/project-layout/blob/master/docs/README.md">示例</a></p>
+<h4 id="x2F-examples"><a href="#x2F-examples" class="headerlink" title="&#x2F;examples"></a>&#x2F;examples</h4><p>项目或者公共库示例<br>&#x2F;examples <a target="_blank" rel="noopener" href="https://github.com/golang-standards/project-layout/blob/master/examples/README.md">示例</a></p>
+<h4 id="x2F-third-party"><a href="#x2F-third-party" class="headerlink" title="&#x2F;third_party"></a>&#x2F;third_party</h4><p>外部工具</p>
+
+
+  </article>
+  <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  <div class="busuanzi center">
+    page PV:&nbsp;<span id="busuanzi_value_page_pv"></span>&nbsp;・&nbsp;
+    site PV:&nbsp;<span id="busuanzi_value_site_pv"></span>&nbsp;・&nbsp;
+    site UV:&nbsp;<span id="busuanzi_value_site_uv"></span>
+  </div>
+
+
+    
+
+
+
+
+
+    </div>
+  </div>
+  <footer class="page-footer"><div class="clearfix">
+</div>
+<div class="right-foot">
+    <div class="firstrow">
+        <a href="#top" target="_self">
+        <svg class="i-caret-right" viewBox="0 0 32 32" width="24" height="24" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
+            <path d="M10 30 L26 16 10 2 Z"></path>
+        </svg>
+        </a>
+        © XXX 2016-2020
+    </div>
+    <div class="secondrow">
+        <a target="_blank" rel="noopener" href="https://github.com/gaoryrt/hexo-theme-pln">
+        Theme Pln
+        </a>
+    </div>
+</div>
+<div class="clearfix">
+</div>
+</footer>
+  <script src="//cdn.bootcss.com/jquery/2.2.1/jquery.min.js"></script>
+<script src="/js/search.min.js"></script>
+<script type="text/javascript">
+
+// disqus scripts
+
+
+// dropdown scripts
+$(".dropdown").click(function(event) {
+  var current = $(this);
+  event.stopPropagation();
+  $(current).children(".dropdown-content")[($(current).children(".dropdown-content").hasClass("open"))?'removeClass':'addClass']("open")
+});
+$(document).click(function(){
+    $(".dropdown-content").removeClass("open");
+})
+
+var path = "/search.xml";
+searchFunc(path, 'local-search-input', 'local-search-result');
+
+</script>
+
+</body>
+</html>

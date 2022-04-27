@@ -1,0 +1,224 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="google-site-verification" content="" />
+  <meta name="referrer" content="unsafe-url">
+  
+  <title>KT Connect一款基于k8s的开发利器</title>
+  <meta name="author" content="John Doe">
+  <meta name="description" content="KT Connect作为一款开发环境治理的轻量级工具已经越来越受欢迎,官方文档非常详细请参考 https://alibaba.github.io/kt-connect/#/zh-cn 支持mac、linux、windows多种平台(windows由于诸多限制, 体验方面和其他平台相比略差)。经过最近">
+  
+  
+  <meta property="og:title" content="KT Connect一款基于k8s的开发利器"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:site_name" content="Hexo"/>
+  <link href="/apple-touch-icon-precomposed.png" sizes="180x180" rel="apple-touch-icon-precomposed">
+  <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/m.min.css">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML" async></script>
+
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+<body>
+  <a id="top"></a>
+  <div id="main">
+    <div class="main-ctnr">
+      <div class="behind">
+  <a href="/" class="back black-color">
+    <svg class="i-close" viewBox="0 0 32 32" width="22" height="22" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
+        <path d="M2 30 L30 2 M30 30 L2 2"></path>
+    </svg>
+  </a>
+  
+</div>
+
+
+  <article class="standard post">
+    <div class="title">
+      
+  
+    <h1 class="page-title center">
+        KT Connect一款基于k8s的开发利器
+    </h1>
+  
+
+
+    </div>
+    <div class="meta center">
+      <time datetime="2020-03-20T02:07:59.000Z" itemprop="datePublished">
+  <svg class="i-calendar" viewBox="0 0 32 32" width="16" height="16" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+    <path d="M2 6 L2 30 30 30 30 6 Z M2 15 L30 15 M7 3 L7 9 M13 3 L13 9 M19 3 L19 9 M25 3 L25 9"></path>
+  </svg>
+  &nbsp;
+  2020-03-20
+</time>
+
+
+
+
+
+
+    </div>
+    <hr>
+    
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E7%BD%AE%E6%9D%A1%E4%BB%B6"><span class="toc-text">前置条件</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%B8%E5%BF%83%E7%BB%84%E4%BB%B6sshuttle-ssh"><span class="toc-text">核心组件sshuttle | ssh</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#ssh%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91%E4%BB%8B%E7%BB%8D"><span class="toc-text">ssh端口转发介绍</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%9C%AC%E5%9C%B0%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91"><span class="toc-text">本地端口转发</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%BF%9C%E7%A8%8B%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91"><span class="toc-text">远程端口转发</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%8A%A8%E6%80%81%E7%AB%AF%E5%8F%A3%E8%BD%AC%E5%8F%91"><span class="toc-text">动态端口转发</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#KT-Connect%E6%A0%B8%E5%BF%83%E5%8A%9F%E8%83%BD%E5%AE%9E%E7%8E%B0%E8%A7%A3%E6%9E%90"><span class="toc-text">KT Connect核心功能实现解析</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#connect"><span class="toc-text">connect</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#exchange"><span class="toc-text">exchange</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#mesh"><span class="toc-text">mesh</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#run"><span class="toc-text">run</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-text">总结</span></a></li></ol></li></ol>
+    
+    <div class="picture-container">
+      
+    </div>
+    <p><code>KT Connect</code>作为一款开发环境治理的轻量级工具已经越来越受欢迎,官方文档非常详细请参考 <a target="_blank" rel="noopener" href="https://alibaba.github.io/kt-connect/#/zh-cn">https://alibaba.github.io/kt-connect/#/zh-cn</a> 支持mac、linux、windows多种平台(windows由于诸多限制, 体验方面和其他平台相比略差)。经过最近一段时间的使用, 我想通过本篇文章对KT Connect的实现思路做一个梳理, 同时把这款好的工具安利给大家(有需求可以在githu上提issue,作者很勤快的)</p>
+<h2 id="前置条件"><a href="#前置条件" class="headerlink" title="前置条件"></a>前置条件</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://sshuttle.readthedocs.io/en/stable/overview.html">sshuttle</a></li>
+<li>kubectl</li>
+<li>ktctl</li>
+<li>本机具备访问k8s的能力</li>
+</ul>
+<h2 id="核心组件sshuttle-ssh"><a href="#核心组件sshuttle-ssh" class="headerlink" title="核心组件sshuttle | ssh"></a>核心组件sshuttle | ssh</h2><p>KT Connect基于sshuttle和ssh端口转发为开发者提供了强大的功能。</p>
+<table>
+<thead>
+<tr>
+<th>命令</th>
+<th>功能</th>
+<th>实现原理</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>connect</td>
+<td>本地访问集群服务(pod ip, dns都支持)</td>
+<td>sshuttle(需要使用sudo权限)</td>
+</tr>
+<tr>
+<td>exchange</td>
+<td>集群访问本地服务</td>
+<td>ssh远程端口转发</td>
+</tr>
+<tr>
+<td>mesh</td>
+<td></td>
+<td>ssh远程端口转发</td>
+</tr>
+<tr>
+<td>run</td>
+<td>将本地服务暴露到集群中(集群中的其他服务可以通过podIP, 或者svc访问本地服务)</td>
+<td>ssh远程端口转发</td>
+</tr>
+</tbody></table>
+<h3 id="ssh端口转发介绍"><a href="#ssh端口转发介绍" class="headerlink" title="ssh端口转发介绍"></a>ssh端口转发介绍</h3><p><code>ssh</code>端口转发也称为<code>ssh</code>隧道，因为他们通过<code>ssh</code>登录以后在<code>ssh</code>的客户端和服务器端建立一个隧道,从而进行通信。<code>ssh</code>的数据转发是经过加密的, 因此通过<code>ssh</code>隧道建立连接交换数据是非常安全的。<code>ssh</code>的端口转发可以分为多种, 下面介绍下常用的三种</p>
+<h4 id="本地端口转发"><a href="#本地端口转发" class="headerlink" title="本地端口转发"></a>本地端口转发</h4><p>将发送到本地端口的请求转发到目标主机端口, 从而达到访问目标主机端口的目的。</p>
+<p>格式:</p>
+<p><code>ssh -L localPort:remoteHost:remotePort</code></p>
+<p>例:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">// 本地主机登录到目标主机,通过访问本地2000端口访问目标主机的3000端口服务</span><br><span class="line">ssh -L 2000:localhost:3000 root@xx.xx.xx.xx</span><br></pre></td></tr></table></figure>
+
+<h4 id="远程端口转发"><a href="#远程端口转发" class="headerlink" title="远程端口转发"></a>远程端口转发</h4><p>将发送到远端主机端口的请求转发到目标主机,这样可以通过访问远端端口来达到访问目标主机端口的目的。</p>
+<p>格式:</p>
+<p><code>ssh -R remotePort:targetHost:targetPort</code></p>
+<p>例:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">// 本地登录到远程主机,通过访问远端2000端口访问本机的3000端口</span><br><span class="line">ssh -R 2000:localhost:3000 root@xx.xx.xx.xx</span><br></pre></td></tr></table></figure>
+
+<h4 id="动态端口转发"><a href="#动态端口转发" class="headerlink" title="动态端口转发"></a>动态端口转发</h4><p>针对本地端口转发和远程端口转发,都存在两个一一对应的端口，分别位于<code>ssh</code>的客户端和服务端,动态端口转发则只绑定一个本地端口,而targetHost:targetPort则是不固定的。targetHost:targetPort是由发起的请求决定的，比如，请求地址为<code>192.168.1.12:3000</code>，则通过<code>ssh</code>转发的请求地址也是<code>192.168.1.12:3000</code>。</p>
+<p>格式:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ssh -D localhost:localPort</span><br></pre></td></tr></table></figure>
+<p>例:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">// 本地主机登录到目标主机, 并进行动态端口转发</span><br><span class="line">ssh -D localhost:3000 root@xx.xx.xx.xx</span><br></pre></td></tr></table></figure>
+<h3 id="KT-Connect核心功能实现解析"><a href="#KT-Connect核心功能实现解析" class="headerlink" title="KT Connect核心功能实现解析"></a>KT Connect核心功能实现解析</h3><p>KT Connect提供的几种服务都是通过在集群中部署<code>shadow</code>服务和本地的<code>ktctl</code>配合完成。其实可以理解<code>shadow</code>为<code>Server</code>,<code>ktctl</code>为<code>Client</code>,只要在这两个服务间建立起隧道即可解决本地与线上集群的网络问题。以下主机针对<code>connect、exchange、mesh、run</code>进行介绍。</p>
+<h3 id="connect"><a href="#connect" class="headerlink" title="connect"></a>connect</h3><p><code>ktctl connect</code>利用<code>sshuttle</code>为开发者提供了本地访问集群服务的能力, 支持<code>ip</code>地址和<code>dns</code>两种。</p>
+<p>执行<code>ktctl connect</code>, 过程如下:</p>
+<ol>
+<li>执行 <code>ktctl connect</code>, 部署<code>shadow</code>到k8s集群, 至于<code>shadow</code>部署到那个<code>namespace</code>使用什么镜像都可以自己指定。同时生成一个<code>ssh</code>的密钥对, 公钥挂载到<code>shadow</code>容器中。私钥保留在本地主机(后续使用sshuttle的时候需要用到私钥)</li>
+<li>执行<code>kubectl port-forward</code>命令, 使<code>shadow</code>服务的端口映射到主机端口</li>
+<li>执行<code>sshuttle</code>命令, 开启<code>dns</code>(<code>dns</code>地址即为<code>shadow</code>的<code>endpoint ip</code>)和<code>ssh</code>选项。建立起远端和本地的<code>ssh</code>隧道</li>
+</ol>
+<p>到此<code>connect</code>的所有流程已经走完了。你可以在本地访问集群中任意服务的<code>ip:port</code>或者<code>dns:port</code></p>
+<h2 id="exchange"><a href="#exchange" class="headerlink" title="exchange"></a>exchange</h2><p><code>ktctl exchange</code>将流量从本地引向集群, 也就是说可以在集群里面直接访问本地服务。有了这个功能直接省去了我们很多重复而且耗时的工作,比如打镜像,升级服务等等。使用如下:</p>
+<ul>
+<li>运行一个本地服务 <code>docker run -itd -p 8080:80 nginx</code></li>
+<li>将本地服务暴露给集群<code>ktctl exchange tomcat --expose 8080</code></li>
+</ul>
+<p>过程如下:</p>
+<ol>
+<li>将已经存在的目标服务<code>tomcat</code>缩容为0</li>
+<li>重复<code>connect</code>步骤一,创建<code>shadow</code>服务并挂载公钥文件</li>
+<li>执行<code>kubectl port-forward</code>命令, 使<code>shadow</code>服务的端口映射到主机端口</li>
+<li>执行<code>ssh</code>的远程端口转发(<code>ssh -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -i privateKey -R  tomcatPort:127.0.0.1:localPort  root@remoteHost -p remoteSSHPort</code>),上述例子中相当于把<code>tomcat</code>的流量转发到本地指定端口。</li>
+</ol>
+<p>此时在集群里面原有的应用就被本地服务给替换了,从而达到<code>exchange</code>的目的</p>
+<h2 id="mesh"><a href="#mesh" class="headerlink" title="mesh"></a>mesh</h2><p><code>ktctl mesh</code>在<code>exchange</code>的基础上做了扩展, 并不是直接替换原有应用, 而是增加版本做规则路由。</p>
+<p>执行<code>ktctl mesh tomcat --expose 8080</code></p>
+<p>过程如下:</p>
+<ol>
+<li>找出名为<code>tomcat</code>的<code>deploy</code>，基于该<code>deploy</code>标签进行复制,部署一个镜像为<code>shadow</code>的<code>deploy</code>。该<code>deploy</code>会以<code>tomcat-kt</code>加一个五位随机字符命名。而这个随机字符串就是该<code>deploy</code>的版本号</li>
+<li>执行kubectl <code>port-forward</code>命令, 使<code>shadow</code>服务的端口映射到主机端口</li>
+<li>执行ssh的远程端口转发，把远程指定端口流量指向本地应用</li>
+<li>此时万事具备, 只要修改<code>istio</code>路由规则就可以将满足条件的流量转向本地服务<h2 id="run"><a href="#run" class="headerlink" title="run"></a>run</h2><code>ktctl run localservice --port 8080 --expose</code><br>其实原理同<code>exchange</code>一样, 唯一的区别在于没有替换集群中的服务。而是在集群中新建了一个<code>svc</code>, 用户可以通过<code>svc</code>或者<code>ip</code>访问到本地服务。</li>
+</ol>
+<p>通过上述示例, 相信大家对<code>TK Connect</code>功能和细节有了一个大致了解。另外<code>KT Connect</code>还提供了可视化(dashboard)查看当前服务状态, check检查当前环境依赖, 更详细的使用请参考官网说明</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>传统的自动化流水线已经很大程度提高了我们的研发效率, 但是对于开发环境来讲, 我们可能做一行代码的调整同样要走完整个自动化流水线,无疑浪费了宝贵的时间。<code>KT Connect</code>打破了网络限制实现了本地联调,真正解决了研发人员的痛点大大提高了研发效率,无疑为团队节约了大量的时间成本。</p>
+
+
+  </article>
+  <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  <div class="busuanzi center">
+    page PV:&nbsp;<span id="busuanzi_value_page_pv"></span>&nbsp;・&nbsp;
+    site PV:&nbsp;<span id="busuanzi_value_site_pv"></span>&nbsp;・&nbsp;
+    site UV:&nbsp;<span id="busuanzi_value_site_uv"></span>
+  </div>
+
+
+    
+
+
+
+
+
+    </div>
+  </div>
+  <footer class="page-footer"><div class="clearfix">
+</div>
+<div class="right-foot">
+    <div class="firstrow">
+        <a href="#top" target="_self">
+        <svg class="i-caret-right" viewBox="0 0 32 32" width="24" height="24" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
+            <path d="M10 30 L26 16 10 2 Z"></path>
+        </svg>
+        </a>
+        © XXX 2016-2020
+    </div>
+    <div class="secondrow">
+        <a target="_blank" rel="noopener" href="https://github.com/gaoryrt/hexo-theme-pln">
+        Theme Pln
+        </a>
+    </div>
+</div>
+<div class="clearfix">
+</div>
+</footer>
+  <script src="//cdn.bootcss.com/jquery/2.2.1/jquery.min.js"></script>
+<script src="/js/search.min.js"></script>
+<script type="text/javascript">
+
+// disqus scripts
+
+
+// dropdown scripts
+$(".dropdown").click(function(event) {
+  var current = $(this);
+  event.stopPropagation();
+  $(current).children(".dropdown-content")[($(current).children(".dropdown-content").hasClass("open"))?'removeClass':'addClass']("open")
+});
+$(document).click(function(){
+    $(".dropdown-content").removeClass("open");
+})
+
+var path = "/search.xml";
+searchFunc(path, 'local-search-input', 'local-search-result');
+
+</script>
+
+</body>
+</html>

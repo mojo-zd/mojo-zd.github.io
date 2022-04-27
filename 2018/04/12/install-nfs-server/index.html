@@ -1,0 +1,158 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="google-site-verification" content="" />
+  <meta name="referrer" content="unsafe-url">
+  
+  <title>install nfs server</title>
+  <meta name="author" content="John Doe">
+  <meta name="description" content="nfs服务器安装ENV: Linux - CentOS-7Setup 1: Install package1yum install nfs-utils -y
+Setup 2: Create DIR &amp;amp; Configuration123mkdir /var/nfsshareecho &amp;quot">
+  
+  
+  <meta property="og:title" content="install nfs server"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:site_name" content="Hexo"/>
+  <link href="/apple-touch-icon-precomposed.png" sizes="180x180" rel="apple-touch-icon-precomposed">
+  <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/m.min.css">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML" async></script>
+
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+<body>
+  <a id="top"></a>
+  <div id="main">
+    <div class="main-ctnr">
+      <div class="behind">
+  <a href="/" class="back black-color">
+    <svg class="i-close" viewBox="0 0 32 32" width="22" height="22" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
+        <path d="M2 30 L30 2 M30 30 L2 2"></path>
+    </svg>
+  </a>
+  
+</div>
+
+
+  <article class="standard post">
+    <div class="title">
+      
+  
+    <h1 class="page-title center">
+        install nfs server
+    </h1>
+  
+
+
+    </div>
+    <div class="meta center">
+      <time datetime="2018-04-12T09:07:38.000Z" itemprop="datePublished">
+  <svg class="i-calendar" viewBox="0 0 32 32" width="16" height="16" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+    <path d="M2 6 L2 30 30 30 30 6 Z M2 15 L30 15 M7 3 L7 9 M13 3 L13 9 M19 3 L19 9 M25 3 L25 9"></path>
+  </svg>
+  &nbsp;
+  2018-04-12
+</time>
+
+
+    
+    &nbsp;
+    <svg class="i-tag" viewBox="0 0 32 32" width="16" height="16" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+      <circle cx="24" cy="8" r="2"></circle>
+      <path d="M2 18 L18 2 30 2 30 14 14 30 Z"></path>
+    </svg>
+    &nbsp;
+    <a href="/categories/math/">math</a>
+
+
+
+
+    
+    &nbsp;
+    <svg class="i-tag" viewBox="0 0 32 32" width="16" height="16" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+      <circle cx="24" cy="8" r="2"></circle>
+      <path d="M2 18 L18 2 30 2 30 14 14 30 Z"></path>
+    </svg>
+    &nbsp;
+    <a href="/tags/storage-driver/">storage-driver</a>
+
+
+    </div>
+    <hr>
+    
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#nfs%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%AE%89%E8%A3%85"><span class="toc-text">nfs服务器安装</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#ENV-Linux-CentOS-7"><span class="toc-text">ENV: Linux - CentOS-7</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Setup-1-Install-package"><span class="toc-text">Setup 1: Install package</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Setup-2-Create-DIR-amp-Configuration"><span class="toc-text">Setup 2: Create DIR &amp; Configuration</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Setup-3-Start-Service"><span class="toc-text">Setup 3: Start Service</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#Setup-4-Check"><span class="toc-text">Setup 4: Check</span></a></li></ol></li></ol></li></ol>
+    
+    <div class="picture-container">
+      
+    </div>
+    <h3 id="nfs服务器安装"><a href="#nfs服务器安装" class="headerlink" title="nfs服务器安装"></a>nfs服务器安装</h3><h5 id="ENV-Linux-CentOS-7"><a href="#ENV-Linux-CentOS-7" class="headerlink" title="ENV: Linux - CentOS-7"></a>ENV: Linux - CentOS-7</h5><h5 id="Setup-1-Install-package"><a href="#Setup-1-Install-package" class="headerlink" title="Setup 1: Install package"></a>Setup 1: Install package</h5><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum install nfs-utils -y</span><br></pre></td></tr></table></figure>
+<h5 id="Setup-2-Create-DIR-amp-Configuration"><a href="#Setup-2-Create-DIR-amp-Configuration" class="headerlink" title="Setup 2: Create DIR &amp; Configuration"></a>Setup 2: Create DIR &amp; Configuration</h5><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">mkdir /var/nfsshare</span><br><span class="line">echo &quot;/var/nfsshare 182.140.210.0/24(rw,sync,no_root_squash)&quot; &gt;&gt; /etc/exports</span><br><span class="line">multi host eg: /var/nfsshare 121.40.169.81/32(rw,sync,no_root_squash) 101.37.26.244/32(rw,sync,no_root_squash) 121.40.232.51/32(rw,sync,no_root_squash) 101.37.38.115/32(rw,sync,no_root_squash)</span><br></pre></td></tr></table></figure>
+<h5 id="Setup-3-Start-Service"><a href="#Setup-3-Start-Service" class="headerlink" title="Setup 3: Start Service"></a>Setup 3: Start Service</h5><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">systemctl enable rpcbind</span><br><span class="line">systemctl enable nfs-server</span><br><span class="line">systemctl enable nfs-lock</span><br><span class="line">systemctl enable nfs-idmap </span><br><span class="line"> </span><br><span class="line">systemctl start rpcbind</span><br><span class="line">systemctl start nfs-server</span><br><span class="line">systemctl start nfs-lock</span><br><span class="line">systemctl start nfs-idmap</span><br></pre></td></tr></table></figure>
+<h5 id="Setup-4-Check"><a href="#Setup-4-Check" class="headerlink" title="Setup 4: Check"></a>Setup 4: Check</h5><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">mount -t nfs 182.140.210.216:/var/nfsshare /mnt  -o vers=3,nfsvers=3</span><br><span class="line">mkdir -p /mnt/xx</span><br><span class="line">ls /var/nfsshare</span><br><span class="line">umount /mnt</span><br></pre></td></tr></table></figure>
+
+  </article>
+  <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  <div class="busuanzi center">
+    page PV:&nbsp;<span id="busuanzi_value_page_pv"></span>&nbsp;・&nbsp;
+    site PV:&nbsp;<span id="busuanzi_value_site_pv"></span>&nbsp;・&nbsp;
+    site UV:&nbsp;<span id="busuanzi_value_site_uv"></span>
+  </div>
+
+
+    
+
+
+
+
+
+    </div>
+  </div>
+  <footer class="page-footer"><div class="clearfix">
+</div>
+<div class="right-foot">
+    <div class="firstrow">
+        <a href="#top" target="_self">
+        <svg class="i-caret-right" viewBox="0 0 32 32" width="24" height="24" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
+            <path d="M10 30 L26 16 10 2 Z"></path>
+        </svg>
+        </a>
+        © XXX 2016-2020
+    </div>
+    <div class="secondrow">
+        <a target="_blank" rel="noopener" href="https://github.com/gaoryrt/hexo-theme-pln">
+        Theme Pln
+        </a>
+    </div>
+</div>
+<div class="clearfix">
+</div>
+</footer>
+  <script src="//cdn.bootcss.com/jquery/2.2.1/jquery.min.js"></script>
+<script src="/js/search.min.js"></script>
+<script type="text/javascript">
+
+// disqus scripts
+
+
+// dropdown scripts
+$(".dropdown").click(function(event) {
+  var current = $(this);
+  event.stopPropagation();
+  $(current).children(".dropdown-content")[($(current).children(".dropdown-content").hasClass("open"))?'removeClass':'addClass']("open")
+});
+$(document).click(function(){
+    $(".dropdown-content").removeClass("open");
+})
+
+var path = "/search.xml";
+searchFunc(path, 'local-search-input', 'local-search-result');
+
+</script>
+
+</body>
+</html>

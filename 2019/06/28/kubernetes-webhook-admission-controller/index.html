@@ -1,0 +1,204 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="google-site-verification" content="" />
+  <meta name="referrer" content="unsafe-url">
+  
+  <title>kubernetes webhook admission controller</title>
+  <meta name="author" content="John Doe">
+  <meta name="description" content="What is admission webhookskubernetes的admission webhooks为开发者提供了非常灵活的插件模式,在kubernetes资源持久化之前用户可以对指定资源做校验、修改等操作。应用场景 eg：接入sidecare、设置默认的servceaccount、设置q">
+  
+  
+  <meta property="og:title" content="kubernetes webhook admission controller"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:site_name" content="Hexo"/>
+  <link href="/apple-touch-icon-precomposed.png" sizes="180x180" rel="apple-touch-icon-precomposed">
+  <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/m.min.css">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML" async></script>
+
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+<body>
+  <a id="top"></a>
+  <div id="main">
+    <div class="main-ctnr">
+      <div class="behind">
+  <a href="/" class="back black-color">
+    <svg class="i-close" viewBox="0 0 32 32" width="22" height="22" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
+        <path d="M2 30 L30 2 M30 30 L2 2"></path>
+    </svg>
+  </a>
+  
+</div>
+
+
+  <article class="standard post">
+    <div class="title">
+      
+  
+    <h1 class="page-title center">
+        kubernetes webhook admission controller
+    </h1>
+  
+
+
+    </div>
+    <div class="meta center">
+      <time datetime="2019-06-28T02:47:56.000Z" itemprop="datePublished">
+  <svg class="i-calendar" viewBox="0 0 32 32" width="16" height="16" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+    <path d="M2 6 L2 30 30 30 30 6 Z M2 15 L30 15 M7 3 L7 9 M13 3 L13 9 M19 3 L19 9 M25 3 L25 9"></path>
+  </svg>
+  &nbsp;
+  2019-06-28
+</time>
+
+
+
+
+
+    
+    &nbsp;
+    <svg class="i-tag" viewBox="0 0 32 32" width="16" height="16" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+      <circle cx="24" cy="8" r="2"></circle>
+      <path d="M2 18 L18 2 30 2 30 14 14 30 Z"></path>
+    </svg>
+    &nbsp;
+    <a href="/tags/k8s/">k8s</a>
+
+
+    </div>
+    <hr>
+    
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#What-is-admission-webhooks"><span class="toc-text">What is admission webhooks</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#How-it-works"><span class="toc-text">How it works</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Require"><span class="toc-text">Require</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Install-cert-manager"><span class="toc-text">Install cert-manager</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Cert-setting"><span class="toc-text">Cert setting</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Prepare"><span class="toc-text">Prepare</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Deploy"><span class="toc-text">Deploy</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#validate"><span class="toc-text">validate</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Review-cert"><span class="toc-text">Review cert</span></a></li></ol>
+    
+    <div class="picture-container">
+      
+    </div>
+    <h3 id="What-is-admission-webhooks"><a href="#What-is-admission-webhooks" class="headerlink" title="What is admission webhooks"></a>What is admission webhooks</h3><p>kubernetes的admission webhooks为开发者提供了非常灵活的插件模式,在kubernetes资源持久化之前用户可以对指定资源做校验、修改等操作。应用场景 eg：接入sidecare、设置默认的servceaccount、设置quota等等</p>
+<h3 id="How-it-works"><a href="#How-it-works" class="headerlink" title="How it works"></a>How it works</h3><ul>
+<li>注册webhook server</li>
+<li>资源操作请求通过API Server Auth验证</li>
+<li>根据注册信息回调对应的webhook server</li>
+</ul>
+<p><strong>webhook注册信息说明</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: admissionregistration.k8s.io/v1beta1</span><br><span class="line">kind: ValidatingWebhookConfiguration</span><br><span class="line">metadata:</span><br><span class="line">  name: config</span><br><span class="line">webhooks:</span><br><span class="line">- name: webhook.default.svc ①</span><br><span class="line">  rules: ②</span><br><span class="line">  - apiGroups:</span><br><span class="line">    - &quot;*&quot;</span><br><span class="line">    apiVersions:</span><br><span class="line">    - &quot;*&quot;</span><br><span class="line">    operations:</span><br><span class="line">    - CREATE</span><br><span class="line">    resources:</span><br><span class="line">    - deployments </span><br><span class="line">  clientConfig:</span><br><span class="line">    service:</span><br><span class="line">      namespace: default</span><br><span class="line">      name: webhook</span><br><span class="line">      path: /pods ③</span><br><span class="line">    ④caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUREekNDQWZlZ0F3SUJBZ0lKQU0va1pKalJKaFpuTUEwR0NTcUdTSWIzRFFFQkN3VUFNQjR4SERBYUJnTlYKQkFNTUUzZGxZbWh2YjJzdVpHVm1ZWFZzZEM1emRtTXdIaGNOTVRrd05qSTNNRGd4TkRBeldoY05Namt3TmpJMApNRGd4TkRBeldqQWVNUnd3R2dZRFZRUUREQk4zWldKb2IyOXJMbVJsWm1GMWJIUXVjM1pqTUlJQklqQU5CZ2txCmhraUc5dzBCQVFFRkFBT0NBUThBTUlJQkNnS0NBUUVBcUdvVG05eGNMNmhTMTBGVGNlc0FnTGszNGh2NXEyWUUKb0YxdDZ6ZlVFd2tRZ3BHem9FNmJDSjVIb0luTnhQWHAxRlN4RVpVQ2crWk8xWCtIY0tReHRQdmpWT1JqYkUzcQpOVFh5NmgyNEUzVXQxNDR0UVM2MHVuakVpNmxMZjFsYmNyNXJ4MG5UVFNNKzZNWWF3SWRNR1VzU29QWTIzUDRiCmsxYlQ2N09mZGF3c1A0UFFMZG9nY3p2aDJ2SGl2UEtQNllyY3ZMNHFUN2twYzllYWdodGVIVlA0ZXRHZFp6c1gKUXhwNUgwdVFQaml0TE9sTkwwT25iRURFWkRIaDRUVGpkc2d6TXVBbXRFNVhtN1lCbWlNRFRIZkFLVUVIdEpUZwo0b1A2YnVTYyswZFJvY0gyMG5mQzI5Y1RXNDdMc3RSbVV4MEhNRGVnTG04a1JEeTZJRnkyRFFJREFRQUJvMUF3ClRqQWRCZ05WSFE0RUZnUVVrdGxEdnc1TUF1Z0ZtVkN6MGUweEdXRHNsZnd3SHdZRFZSMGpCQmd3Rm9BVWt0bEQKdnc1TUF1Z0ZtVkN6MGUweEdXRHNsZnd3REFZRFZSMFRCQVV3QXdFQi96QU5CZ2txaGtpRzl3MEJBUXNGQUFPQwpBUUVBQk1pbVNieW9IeGlIVkYyOGczU3ZrNDdBNkUvNEttcEdoTlFIMmh1QStmczhObFc0MXlrbmQwbFMyT0RJCnU1aks2MEdMaTdQTmszeFc4bXBERnJ5OTh3d1BIV1dRUVh0WEVEa3dnaFl2Y1ErVy9JbFpJQXdFcTAyOE5kLzUKVnc4ZWNWaFhFNkNHdmszNmVMQ3ZSeDQvOVRGeDg3Z0hpdnl2V3YxcGJQMjFqWjQ1MVBsZDUyYkpRek1zNHg3QworekN5d3k4NG9QTjBsYzduMC9YdlJTWi9hbVVEQzhtaGd3YVFsUGpxd0FJUU9GL1F5QkdFQ2N0SjNHZU91cGhpCnJPUzBrZGs4YzFyLzh6bVp1Q1hNWTZKc21saGhuMCtpWHhDdXRhRWdpeWxxdEZTM0NLZkdmSnN3b2M5QjN5WHUKQWlHc21uWVoxbEoyRkdmWU1lT2xoZzJlK1E9PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0t</span><br></pre></td></tr></table></figure>
+<p>① webhook名称</p>
+<p>② 描述api-server操作什么资源什么动作时调用webhook插件</p>
+<p>③ 调用webhook api的地址</p>
+<p>④ 提供和webhook通信的TLS链接信息</p>
+<p>注: 如何编写webhook server可以参考 <a target="_blank" rel="noopener" href="https://github.com/kubernetes/kubernetes/blob/v1.13.0/test/images/webhook/main.go">https://github.com/kubernetes/kubernetes/blob/v1.13.0/test/images/webhook/main.go</a></p>
+<h3 id="Require"><a href="#Require" class="headerlink" title="Require"></a>Require</h3><ul>
+<li>准备一个kubernetes集群必须为v1.9或以上的版本</li>
+<li>api server需要开启<code>MutatingAdmissionWebhook</code> <code>ValidatingAdmissionWebhook</code>，通过一下命令可查看<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">kubectl api-versions | grep admissionregistration</span><br><span class="line">&gt; admissionregistration.k8s.io/v1beta1</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>上面提到了webhook需要使用TLS, 为了简单我们可以使用cert-manager来管理证书生成</p>
+<h3 id="Install-cert-manager"><a href="#Install-cert-manager" class="headerlink" title="Install cert-manager"></a>Install cert-manager</h3><p>cert-manager的安装非常简单,官网也给出了步骤。</p>
+<ul>
+<li><p>Installing with regular manifests</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"># Create a namespace to run cert-manager in</span><br><span class="line">kubectl create namespace cert-manager</span><br><span class="line"></span><br><span class="line"># Disable resource validation on the cert-manager namespace</span><br><span class="line">kubectl label namespace cert-manager certmanager.k8s.io/disable-validation=true</span><br><span class="line"></span><br><span class="line"># Install the CustomResourceDefinitions and cert-manager itself</span><br><span class="line">kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v0.8.1/cert-manager.yaml</span><br></pre></td></tr></table></figure>
+<p>注: 安装过程中请注意文档中的Note,我当前执行的环境为k8s v1.13.6,本文给出的步骤只支持kubernetes v1.12以上。如果遇到以下问题请再执行一遍<code>apply</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">unable to recognize &quot;https://github.com/jetstack/cert-manager/releases/download/v0.8.1/cert-manager.yaml&quot;: no matches for kind &quot;Issuer&quot; in version &quot;certmanager.k8s.io/v1alpha1&quot;</span><br><span class="line">unable to recognize &quot;https://github.com/jetstack/cert-manager/releases/download/v0.8.1/cert-manager.yaml&quot;: no matches for kind &quot;Certificate&quot; in version &quot;certmanager.k8s.io/v1alpha1&quot;</span><br><span class="line">unable to recognize &quot;https://github.com/jetstack/cert-manager/releases/download/v0.8.1/cert-manager.yaml&quot;: no matches for kind &quot;Issuer&quot; in version &quot;certmanager.k8s.io/v1alpha1&quot;</span><br><span class="line">unable to recognize &quot;https://github.com/jetstack/cert-manager/releases/download/v0.8.1/cert-manager.yaml&quot;: no matches for kind &quot;Certificate&quot; in version &quot;certmanager.k8s.io/v1alpha1&quot;</span><br></pre></td></tr></table></figure></li>
+<li><p>Check pod status</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">kubectl get po -n cert-manager</span><br><span class="line"></span><br><span class="line">NAME                                       READY   STATUS    RESTARTS   AGE</span><br><span class="line">cert-manager-68cfd787b6-rbbkt              1/1     Running   1          6d21h</span><br><span class="line">cert-manager-cainjector-5975fd64c5-csd9w   1/1     Running   29         6d21h</span><br><span class="line">cert-manager-webhook-5c7f95fd44-qdplg      1/1     Running   0          6d21h</span><br></pre></td></tr></table></figure>
+<h3 id="Cert-setting"><a href="#Cert-setting" class="headerlink" title="Cert setting"></a>Cert setting</h3><p>证书管理工具<a target="_blank" rel="noopener" href="https://github.com/jetstack/cert-manager">cert-manager</a>,下面的demo我将部署一个webhook到default namespace为例。</p>
+</li>
+<li><p>Generate a signing key pair</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl genrsa -out ca.key 2048</span><br></pre></td></tr></table></figure></li>
+<li><p>Create a self signed Certificate, valid for 10yrs with the ‘signing’ option set</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl req -x509 -new -nodes -key ca.key -subj &quot;/CN=webhook.default.svc&quot; -days 3650 -reqexts v3_req -extensions v3_ca -out ca.crt</span><br></pre></td></tr></table></figure>
+<h3 id="Prepare"><a href="#Prepare" class="headerlink" title="Prepare"></a>Prepare</h3></li>
+<li><p>Save the signing key pair as a Secret</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">kubectl create secret tls ca-key-pair \</span><br><span class="line">   --cert=ca.crt \</span><br><span class="line">   --key=ca.key \</span><br><span class="line">   --namespace=default</span><br></pre></td></tr></table></figure></li>
+<li><p>Creating an Issuer referencing the Secret <code>issuer.yaml</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: certmanager.k8s.io/v1alpha1</span><br><span class="line">kind: Issuer</span><br><span class="line">metadata:</span><br><span class="line">  name: ca-issuer</span><br><span class="line">  namespace: default</span><br><span class="line">spec:</span><br><span class="line">  ca:</span><br><span class="line">    secretName: ca-key-pair</span><br></pre></td></tr></table></figure>
+<p>注:如果想所有namespace都可以使用的话可以参考ClusterIssuer</p>
+</li>
+<li><p>Create Certificate <code>certificate.yaml</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: certmanager.k8s.io/v1alpha1</span><br><span class="line">kind: Certificate</span><br><span class="line">metadata:</span><br><span class="line">  name: example-com</span><br><span class="line">  namespace: default</span><br><span class="line">spec:</span><br><span class="line">  secretName: example-com-tls</span><br><span class="line">  issuerRef:</span><br><span class="line">    name: ca-issuer</span><br><span class="line">    # We can reference ClusterIssuers by changing the kind here.</span><br><span class="line">    # The default value is Issuer (i.e. a locally namespaced Issuer)</span><br><span class="line">    kind: Issuer</span><br><span class="line">  commonName: webhook.default.svc</span><br><span class="line">  organization:</span><br><span class="line">  - Example CA</span><br><span class="line">  dnsNames:</span><br><span class="line">  - webhook.default.svc</span><br></pre></td></tr></table></figure></li>
+<li><p>Create ValidatingWebhookConfiguration <code>webhookconfig.yaml</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: admissionregistration.k8s.io/v1beta1</span><br><span class="line">kind: ValidatingWebhookConfiguration</span><br><span class="line">metadata:</span><br><span class="line">  name: webhook</span><br><span class="line">webhooks:</span><br><span class="line">- name: webhook.default.svc</span><br><span class="line">  rules:</span><br><span class="line">  - apiGroups:</span><br><span class="line">    - &quot;*&quot;</span><br><span class="line">    apiVersions:</span><br><span class="line">    - &quot;*&quot;</span><br><span class="line">    operations:</span><br><span class="line">    - CREATE</span><br><span class="line">    resources:</span><br><span class="line">    - pods</span><br><span class="line">  clientConfig:</span><br><span class="line">    service:</span><br><span class="line">      namespace: default</span><br><span class="line">      name: webhook</span><br><span class="line">      path: /pods</span><br><span class="line">    caBundle: &lt;defaultnamespace.secrets.example-com-tls.ca.crt&gt;</span><br></pre></td></tr></table></figure>
+<p>注: caBundle怎么来的可能很多人不清楚,我特意加个备注吧。secrets.example-com-tls.ca.crt(来自于secrets为example-com-tls的ca.crt字段)。</p>
+</li>
+<li><p>webhook deployment <code>webhook-demo.yaml</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: rbac.authorization.k8s.io/v1</span><br><span class="line">kind: ClusterRole</span><br><span class="line">metadata:</span><br><span class="line">  name: webhook</span><br><span class="line">rules:</span><br><span class="line">- apiGroups: [&quot;*&quot;]</span><br><span class="line">  resources: [&quot;*&quot;]</span><br><span class="line">  verbs: [&quot;*&quot;]</span><br><span class="line">---</span><br><span class="line">apiVersion: rbac.authorization.k8s.io/v1</span><br><span class="line">kind: ClusterRoleBinding</span><br><span class="line">metadata:</span><br><span class="line">  name: webhook</span><br><span class="line">  namespace: default</span><br><span class="line">subjects:</span><br><span class="line">- kind: ServiceAccount</span><br><span class="line">  name: webhook</span><br><span class="line">  namespace: default</span><br><span class="line">roleRef:</span><br><span class="line">  kind: ClusterRole</span><br><span class="line">  name: webhook</span><br><span class="line">  apiGroup: rbac.authorization.k8s.io</span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: ServiceAccount</span><br><span class="line">metadata:</span><br><span class="line">  name: webhook</span><br><span class="line">  namespace: default</span><br><span class="line">---</span><br><span class="line">apiVersion: extensions/v1beta1</span><br><span class="line">kind: Deployment</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    app: webhook</span><br><span class="line">  name: webhook</span><br><span class="line">  namespace: default</span><br><span class="line">spec:</span><br><span class="line">  replicas: 1</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      app: webhook</span><br><span class="line">  template:</span><br><span class="line">    metadata:</span><br><span class="line">      labels:</span><br><span class="line">        app: webhook</span><br><span class="line">    spec:</span><br><span class="line">      containers:</span><br><span class="line">      - image: registry.cn-hangzhou.aliyuncs.com/mojo/wehbook:0.0.1</span><br><span class="line">        imagePullPolicy: Always</span><br><span class="line">        name: webhook</span><br><span class="line">        volumeMounts:</span><br><span class="line">        - mountPath: /etc/certs</span><br><span class="line">          name: config</span><br><span class="line">      serviceAccount: webhook</span><br><span class="line">      volumes:</span><br><span class="line">      - name: config</span><br><span class="line">        secret:</span><br><span class="line">          secretName: example-com-tls</span><br><span class="line">---</span><br><span class="line">apiVersion: v1</span><br><span class="line">kind: Service</span><br><span class="line">metadata:</span><br><span class="line">  labels:</span><br><span class="line">    app: webhook</span><br><span class="line">  name: webhook</span><br><span class="line">  namespace: default</span><br><span class="line">spec:</span><br><span class="line">  ports:</span><br><span class="line">  - name: https</span><br><span class="line">    port: 443</span><br><span class="line">    protocol: TCP</span><br><span class="line">    targetPort: 443</span><br><span class="line">  selector:</span><br><span class="line">    app: webhook</span><br></pre></td></tr></table></figure>
+<h3 id="Deploy"><a href="#Deploy" class="headerlink" title="Deploy"></a>Deploy</h3><p>apply kubernetes yamls</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">1. kubectl apply -f issuer.yaml</span><br><span class="line">2. kubectl apply -f certificate.yaml</span><br><span class="line">3. kubectl apply -f webhookconfig.yaml #记得替换caBundle</span><br><span class="line">4. kubectl apply -f webhook-demo.yaml</span><br></pre></td></tr></table></figure>
+<h3 id="validate"><a href="#validate" class="headerlink" title="validate"></a>validate</h3><p><code>webhook-demo.yaml</code>只会在pod创建时打印node数量日志,如果执行一下命令你看到相关日志代表已经成功了。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">kubectl create deploy test-pod-create --image=ngingx</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="Review-cert"><a href="#Review-cert" class="headerlink" title="Review cert"></a>Review cert</h3><p>对于不知道cert如何生成的同学可能对生成的证书比较好奇,可以通过如下命令查看生成证书的信息。</p>
+<p>查看证书相关信息</p>
+<ol>
+<li>查看ca信息<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl x509  -noout -text -in ./ca.crt</span><br></pre></td></tr></table></figure></li>
+<li>查看key信息<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl rsa -in ca.key -noout -text</span><br></pre></td></tr></table></figure></li>
+<li>查看csr信息<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">openssl req -key server.key -in server.csr -noout -text</span><br></pre></td></tr></table></figure></li>
+</ol>
+
+
+  </article>
+  <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  <div class="busuanzi center">
+    page PV:&nbsp;<span id="busuanzi_value_page_pv"></span>&nbsp;・&nbsp;
+    site PV:&nbsp;<span id="busuanzi_value_site_pv"></span>&nbsp;・&nbsp;
+    site UV:&nbsp;<span id="busuanzi_value_site_uv"></span>
+  </div>
+
+
+    
+
+
+
+
+
+    </div>
+  </div>
+  <footer class="page-footer"><div class="clearfix">
+</div>
+<div class="right-foot">
+    <div class="firstrow">
+        <a href="#top" target="_self">
+        <svg class="i-caret-right" viewBox="0 0 32 32" width="24" height="24" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
+            <path d="M10 30 L26 16 10 2 Z"></path>
+        </svg>
+        </a>
+        © XXX 2016-2020
+    </div>
+    <div class="secondrow">
+        <a target="_blank" rel="noopener" href="https://github.com/gaoryrt/hexo-theme-pln">
+        Theme Pln
+        </a>
+    </div>
+</div>
+<div class="clearfix">
+</div>
+</footer>
+  <script src="//cdn.bootcss.com/jquery/2.2.1/jquery.min.js"></script>
+<script src="/js/search.min.js"></script>
+<script type="text/javascript">
+
+// disqus scripts
+
+
+// dropdown scripts
+$(".dropdown").click(function(event) {
+  var current = $(this);
+  event.stopPropagation();
+  $(current).children(".dropdown-content")[($(current).children(".dropdown-content").hasClass("open"))?'removeClass':'addClass']("open")
+});
+$(document).click(function(){
+    $(".dropdown-content").removeClass("open");
+})
+
+var path = "/search.xml";
+searchFunc(path, 'local-search-input', 'local-search-result');
+
+</script>
+
+</body>
+</html>

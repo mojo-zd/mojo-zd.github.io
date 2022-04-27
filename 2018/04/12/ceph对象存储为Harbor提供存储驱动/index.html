@@ -1,0 +1,373 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="google-site-verification" content="" />
+  <meta name="referrer" content="unsafe-url">
+  
+  <title>ceph对象存储为Harbor提供存储驱动</title>
+  <meta name="author" content="John Doe">
+  <meta name="description" content="主机环境
+
+
+name
+Version
+
+
+
+centos
+7.3
+
+
+docker server
+1.12.6
+
+
+docker client
+1.12.6
+
+
+docker-compose
+1.19.0
+
+
+ceph服务器启动服务1234567docker run -d \           ">
+  
+  
+  <meta property="og:title" content="ceph对象存储为Harbor提供存储驱动"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:site_name" content="Hexo"/>
+  <link href="/apple-touch-icon-precomposed.png" sizes="180x180" rel="apple-touch-icon-precomposed">
+  <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/m.min.css">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML" async></script>
+
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+<body>
+  <a id="top"></a>
+  <div id="main">
+    <div class="main-ctnr">
+      <div class="behind">
+  <a href="/" class="back black-color">
+    <svg class="i-close" viewBox="0 0 32 32" width="22" height="22" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
+        <path d="M2 30 L30 2 M30 30 L2 2"></path>
+    </svg>
+  </a>
+  
+</div>
+
+
+  <article class="standard post">
+    <div class="title">
+      
+  
+    <h1 class="page-title center">
+        ceph对象存储为Harbor提供存储驱动
+    </h1>
+  
+
+
+    </div>
+    <div class="meta center">
+      <time datetime="2018-04-12T09:04:27.000Z" itemprop="datePublished">
+  <svg class="i-calendar" viewBox="0 0 32 32" width="16" height="16" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+    <path d="M2 6 L2 30 30 30 30 6 Z M2 15 L30 15 M7 3 L7 9 M13 3 L13 9 M19 3 L19 9 M25 3 L25 9"></path>
+  </svg>
+  &nbsp;
+  2018-04-12
+</time>
+
+
+    
+    &nbsp;
+    <svg class="i-tag" viewBox="0 0 32 32" width="16" height="16" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+      <circle cx="24" cy="8" r="2"></circle>
+      <path d="M2 18 L18 2 30 2 30 14 14 30 Z"></path>
+    </svg>
+    &nbsp;
+    <a href="/categories/math/">math</a>
+
+
+
+
+    
+    &nbsp;
+    <svg class="i-tag" viewBox="0 0 32 32" width="16" height="16" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+      <circle cx="24" cy="8" r="2"></circle>
+      <path d="M2 18 L18 2 30 2 30 14 14 30 Z"></path>
+    </svg>
+    &nbsp;
+    <a href="/tags/registry/">registry</a>
+
+
+    </div>
+    <hr>
+    
+      <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BB%E6%9C%BA%E7%8E%AF%E5%A2%83"><span class="toc-text">主机环境</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ceph%E6%9C%8D%E5%8A%A1%E5%99%A8"><span class="toc-text">ceph服务器</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%90%AF%E5%8A%A8%E6%9C%8D%E5%8A%A1"><span class="toc-text">启动服务</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%B7%BB%E5%8A%A0swift%E7%94%A8%E6%88%B7"><span class="toc-text">添加swift用户</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#client%E4%B8%BB%E6%9C%BA%E6%93%8D%E4%BD%9C"><span class="toc-text">client主机操作</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%AE%89%E8%A3%85swift%E5%AE%A2%E6%88%B7%E7%AB%AF"><span class="toc-text">安装swift客户端</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%88%9B%E5%BB%BAregistry-container"><span class="toc-text">创建registry container</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%9F%A5%E7%9C%8B%E5%88%9B%E5%BB%BA%E7%9A%84registry-container"><span class="toc-text">查看创建的registry container</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Harbor%E5%AE%89%E8%A3%85"><span class="toc-text">Harbor安装</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%AA%8C%E8%AF%81"><span class="toc-text">验证</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AF%B9%E6%AF%94%E6%B5%8B%E8%AF%95"><span class="toc-text">对比测试</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%AC%AC%E4%B8%80%E7%BB%84%E6%B5%8B%E8%AF%95"><span class="toc-text">第一组测试</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%AC%AC%E4%BA%8C%E7%BB%84%E6%B5%8B%E8%AF%95"><span class="toc-text">第二组测试</span></a></li></ol></li></ol>
+    
+    <div class="picture-container">
+      
+    </div>
+    <h3 id="主机环境"><a href="#主机环境" class="headerlink" title="主机环境"></a>主机环境</h3><table>
+<thead>
+<tr>
+<th>name</th>
+<th>Version</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>centos</td>
+<td>7.3</td>
+</tr>
+<tr>
+<td>docker server</td>
+<td>1.12.6</td>
+</tr>
+<tr>
+<td>docker client</td>
+<td>1.12.6</td>
+</tr>
+<tr>
+<td>docker-compose</td>
+<td>1.19.0</td>
+</tr>
+</tbody></table>
+<h3 id="ceph服务器"><a href="#ceph服务器" class="headerlink" title="ceph服务器"></a>ceph服务器</h3><h4 id="启动服务"><a href="#启动服务" class="headerlink" title="启动服务"></a>启动服务</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">docker run -d \</span><br><span class="line">                -e MON_IP=127.0.0.1 \</span><br><span class="line">                -e CEPH_NETWORK=127.0.0.0/24 \</span><br><span class="line">                -e RGW_CIVETWEB_PORT=8080 \</span><br><span class="line">                --net=host \</span><br><span class="line">                --name=ceph-demo \</span><br><span class="line">                kiwenlau/ceph-demo</span><br></pre></td></tr></table></figure>
+<p><strong>备注:</strong> 如果RGW_CIVETWEB_PORT不指定,默认监听7480端口</p>
+<h4 id="添加swift用户"><a href="#添加swift用户" class="headerlink" title="添加swift用户"></a>添加swift用户</h4><ul>
+<li>创建s3用户<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">radosgw-admin user create --uid=&quot;mojo&quot; --display-name=&quot;Mojo&quot; --email=test@test.com</span><br></pre></td></tr></table></figure>
+输出<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    &quot;user_id&quot;: &quot;mojo&quot;,</span><br><span class="line">    &quot;display_name&quot;: &quot;Mojo&quot;,</span><br><span class="line">    &quot;email&quot;: &quot;test@test.com&quot;,</span><br><span class="line">    &quot;suspended&quot;: 0,</span><br><span class="line">    &quot;max_buckets&quot;: 1000,</span><br><span class="line">    &quot;auid&quot;: 0,</span><br><span class="line">    &quot;subusers&quot;: [],</span><br><span class="line">    &quot;keys&quot;: [</span><br><span class="line">        &#123;</span><br><span class="line">            &quot;user&quot;: &quot;mojo&quot;,</span><br><span class="line">            &quot;access_key&quot;: &quot;3AFLMXSA3WUT5NVDC8Z6&quot;,</span><br><span class="line">            &quot;secret_key&quot;: &quot;3VY3SrcLjDA8ReiswdOvqODXUawyshZ3txTNFF5A&quot;</span><br><span class="line">        &#125;</span><br><span class="line">    ],</span><br><span class="line">    &quot;swift_keys&quot;: [],</span><br><span class="line">    &quot;caps&quot;: [],</span><br><span class="line">    &quot;op_mask&quot;: &quot;read, write, delete&quot;,</span><br><span class="line">    &quot;default_placement&quot;: &quot;&quot;,</span><br><span class="line">    &quot;placement_tags&quot;: [],</span><br><span class="line">    &quot;bucket_quota&quot;: &#123;</span><br><span class="line">        &quot;enabled&quot;: false,</span><br><span class="line">        &quot;max_size_kb&quot;: -1,</span><br><span class="line">        &quot;max_objects&quot;: -1</span><br><span class="line">    &#125;,</span><br><span class="line">    &quot;user_quota&quot;: &#123;</span><br><span class="line">        &quot;enabled&quot;: false,</span><br><span class="line">        &quot;max_size_kb&quot;: -1,</span><br><span class="line">        &quot;max_objects&quot;: -1</span><br><span class="line">    &#125;,</span><br><span class="line">    &quot;temp_url_keys&quot;: []</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+<li>添加子账号(swift api使用)<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">radosgw-admin subuser create --uid=mojo --subuser=mojo:swift --access=full</span><br></pre></td></tr></table></figure>
+输出:<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    &quot;user_id&quot;: &quot;mojo&quot;,</span><br><span class="line">    &quot;display_name&quot;: &quot;Mojo&quot;,</span><br><span class="line">    &quot;email&quot;: &quot;test@test.com&quot;,</span><br><span class="line">    &quot;suspended&quot;: 0,</span><br><span class="line">    &quot;max_buckets&quot;: 1000,</span><br><span class="line">    &quot;auid&quot;: 0,</span><br><span class="line">    &quot;subusers&quot;: [</span><br><span class="line">        &#123;</span><br><span class="line">            &quot;id&quot;: &quot;mojo:swift&quot;,</span><br><span class="line">            &quot;permissions&quot;: &quot;full-control&quot;</span><br><span class="line">        &#125;</span><br><span class="line">    ],</span><br><span class="line">    &quot;keys&quot;: [</span><br><span class="line">        &#123;</span><br><span class="line">            &quot;user&quot;: &quot;mojo&quot;,</span><br><span class="line">            &quot;access_key&quot;: &quot;3AFLMXSA3WUT5NVDC8Z6&quot;,</span><br><span class="line">            &quot;secret_key&quot;: &quot;3VY3SrcLjDA8ReiswdOvqODXUawyshZ3txTNFF5A&quot;</span><br><span class="line">        &#125;</span><br><span class="line">    ],</span><br><span class="line">    &quot;swift_keys&quot;: [</span><br><span class="line">        &#123;</span><br><span class="line">            &quot;user&quot;: &quot;mojo:swift&quot;,</span><br><span class="line">            &quot;secret_key&quot;: &quot;LRDTpRiMXjC1fKWBQwPrP327myVnZ2FSB0XGAkV8&quot;</span><br><span class="line">        &#125;</span><br><span class="line">    ],</span><br><span class="line">    &quot;caps&quot;: [],</span><br><span class="line">    &quot;op_mask&quot;: &quot;read, write, delete&quot;,</span><br><span class="line">    &quot;default_placement&quot;: &quot;&quot;,</span><br><span class="line">    &quot;placement_tags&quot;: [],</span><br><span class="line">    &quot;bucket_quota&quot;: &#123;</span><br><span class="line">        &quot;enabled&quot;: false,</span><br><span class="line">        &quot;max_size_kb&quot;: -1,</span><br><span class="line">        &quot;max_objects&quot;: -1</span><br><span class="line">    &#125;,</span><br><span class="line">    &quot;user_quota&quot;: &#123;</span><br><span class="line">        &quot;enabled&quot;: false,</span><br><span class="line">        &quot;max_size_kb&quot;: -1,</span><br><span class="line">        &quot;max_objects&quot;: -1</span><br><span class="line">    &#125;,</span><br><span class="line">    &quot;temp_url_keys&quot;: []</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p><strong>备注:</strong> 添加swift账号必须先创建s3用户</p>
+<h3 id="client主机操作"><a href="#client主机操作" class="headerlink" title="client主机操作"></a>client主机操作</h3><h4 id="安装swift客户端"><a href="#安装swift客户端" class="headerlink" title="安装swift客户端"></a>安装swift客户端</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">1. yum install python-setuptools</span><br><span class="line">2. easy_install pip</span><br><span class="line">3. pip install --upgrade setuptools</span><br><span class="line">4. pip install --upgrade python-swiftclient</span><br></pre></td></tr></table></figure>
+
+<h4 id="创建registry-container"><a href="#创建registry-container" class="headerlink" title="创建registry container"></a>创建registry container</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">swift -A http://192.168.1.251:8080/auth/v1.0 -U mojo:swift -K &#x27;LRDTpRiMXjC1fKWBQwPrP327myVnZ2FSB0XGAkV8&#x27; post registry</span><br></pre></td></tr></table></figure>
+<p><strong>备注:</strong> 192.168.1.251 为ceph服务所在主机ip, 8080为RGW_CIVETWEB_PORT的值</p>
+<h4 id="查看创建的registry-container"><a href="#查看创建的registry-container" class="headerlink" title="查看创建的registry container"></a>查看创建的registry container</h4><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">swift -A http://192.168.1.251:8080/auth/v1.0 -U mojo:swift -K &#x27;LRDTpRiMXjC1fKWBQwPrP327myVnZ2FSB0XGAkV8&#x27; list</span><br></pre></td></tr></table></figure>
+<p>输出:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">registry</span><br></pre></td></tr></table></figure>
+
+<h3 id="Harbor安装"><a href="#Harbor安装" class="headerlink" title="Harbor安装"></a>Harbor安装</h3><p><strong>备注:</strong> 基于在线方式的安装, 本文采用http的方式配置harbor</p>
+<ul>
+<li>下载<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">1. wget https://github.com/vmware/harbor/releases/download/v1.2.2/harbor-online-installer-v1.2.2.tgz</span><br><span class="line">2. tar -zxvf harbor-online-installer-v1.2.2.tgz -C install</span><br></pre></td></tr></table></figure></li>
+<li>修改配置<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">1. install/harbor</span><br><span class="line">2. vi harbor.cfg</span><br><span class="line">hostname=xx.xx.xx.xx  //设置为当前主机ip</span><br></pre></td></tr></table></figure></li>
+<li>修改harbor registry配置文件<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vi common/templates/registry/config.yml</span><br></pre></td></tr></table></figure>
+内容:<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">version: 0.1</span><br><span class="line">log:</span><br><span class="line">  level: debug</span><br><span class="line">  fields:</span><br><span class="line">    service: registry</span><br><span class="line">storage:</span><br><span class="line">  swift:</span><br><span class="line">    username: mojo:swift</span><br><span class="line">    password: LRDTpRiMXjC1fKWBQwPrP327myVnZ2FSB0XGAkV8</span><br><span class="line">    authurl: http://192.168.1.251:8080/auth/v1.0</span><br><span class="line">    tenantid: mojo</span><br><span class="line">    container: registry</span><br><span class="line">    insecureskipverify: false</span><br><span class="line">    rootdirectory: /registry</span><br><span class="line">http:</span><br><span class="line">    addr: :5000</span><br><span class="line">    secret: placeholder</span><br><span class="line">    debug:</span><br><span class="line">        addr: localhost:5001</span><br><span class="line">auth:</span><br><span class="line">  token:</span><br><span class="line">    issuer: harbor-token-issuer</span><br><span class="line">    realm: $ui_url/service/token</span><br><span class="line">    rootcertbundle: /etc/registry/root.crt</span><br><span class="line">    service: harbor-registry</span><br><span class="line">notifications:</span><br><span class="line">  endpoints:</span><br><span class="line">      - name: harbor</span><br><span class="line">        disabled: false</span><br><span class="line">        url: http://ui/service/notifications</span><br><span class="line">        timeout: 3000ms</span><br><span class="line">        threshold: 5</span><br><span class="line">        backoff: 1s</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p><strong>备注:</strong> authurl为<a href="http://CEPH_SERVER_IP:RGW_CIVETWEB_PORT/auth/v1.0">http://CEPH_SERVER_IP:RGW_CIVETWEB_PORT/auth/v1.0</a></p>
+<ul>
+<li>为docker添加insecure<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">1. vi /etc/docker/daemon.json</span><br><span class="line"></span><br><span class="line">&#123;</span><br><span class="line">  &quot;registry-mirrors&quot;: [&quot;http://ef017c13.m.daocloud.io&quot;],</span><br><span class="line">  &quot;exec-opt&quot;: [</span><br><span class="line">    &quot;native.cgroupdriver=systemd&quot;</span><br><span class="line">  ],</span><br><span class="line">  &quot;log-driver&quot;: &quot;json-file&quot;,</span><br><span class="line">  &quot;log-opts&quot;: &#123;</span><br><span class="line">    &quot;max-size&quot;: &quot;100m&quot;,</span><br><span class="line">    &quot;max-file&quot;: &quot;5&quot;</span><br><span class="line">  &#125;,</span><br><span class="line">  &quot;insecure-registries&quot;: [</span><br><span class="line">      &quot;xx.xx.xx.xx&quot; //编辑daemon.json文件仅需要修改此处,此处为添加的harbor的ip地址</span><br><span class="line">  ],</span><br><span class="line">  &quot;storage-driver&quot;: &quot;overlay&quot;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">2. systemctl daemon-reload</span><br><span class="line">3. systemctl restart docker</span><br></pre></td></tr></table></figure></li>
+<li>下载harbor镜像并启动harbor服务<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sh install.sh</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h3><ul>
+<li>进入ceph容器list pool<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">1. docker exec -it ceph-demo /bin/bash</span><br><span class="line">2. rados lspools</span><br></pre></td></tr></table></figure>
+输出:<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">rbd</span><br><span class="line">cephfs_data</span><br><span class="line">cephfs_metadata</span><br><span class="line">.rgw.root</span><br><span class="line">.rgw.control</span><br><span class="line">.rgw</span><br><span class="line">.rgw.gc</span><br><span class="line">.log</span><br><span class="line">.users.uid</span><br><span class="line">.users.email</span><br><span class="line">.users</span><br><span class="line">.users.swift</span><br><span class="line">.rgw.buckets.index</span><br></pre></td></tr></table></figure></li>
+<li>在client端push新的镜像到镜像仓库<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">1. docker login --username=admin xx.xx.xx.xx</span><br><span class="line">2. docker tag docker.io/nginx xx.xx.xx.xx/library/nginx</span><br><span class="line">3. docker push xx.xx.xx.xx/library/nginx</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p><strong>备注:</strong> xx.xx.xx.xx为harbor的访问地址</p>
+<ul>
+<li>验证镜像是否已经存在ceph中<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">1. docker exec -it ceph-demo /bin/bash</span><br><span class="line">2. rados lspools</span><br></pre></td></tr></table></figure>
+输出:<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">rbd</span><br><span class="line">cephfs_data</span><br><span class="line">cephfs_metadata</span><br><span class="line">.rgw.root</span><br><span class="line">.rgw.control</span><br><span class="line">.rgw</span><br><span class="line">.rgw.gc</span><br><span class="line">.log</span><br><span class="line">.users.uid</span><br><span class="line">.users.email</span><br><span class="line">.users</span><br><span class="line">.users.swift</span><br><span class="line">.rgw.buckets.index</span><br><span class="line">.rgw.buckets</span><br></pre></td></tr></table></figure>
+和第一次rados lspools对比发现现在多了一个.rgw.buckets pool。查看.rgw.buckets pool中是否存在刚刚推送的镜像文件<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rados --pool .rgw.buckets ls | grep library/nginx</span><br></pre></td></tr></table></figure>
+输出:<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">default.4108.1_files/docker/registry/v2/repositories/library/nginx/_manifests/revisions/sha256/600bff7fb36d7992512f8c07abd50aac08db8f17c94e3c83e47d53435a1a6f7c/link</span><br><span class="line">default.4108.1_files/docker/registry/v2/repositories/library/nginx/_layers/sha256/4e9f6296fa34712fd20dff7940a476b0d47b91671528644253336bfb00fb4924/link</span><br><span class="line">default.4108.1_files/docker/registry/v2/repositories/library/nginx/_manifests/tags/latest/current/link</span><br><span class="line">default.4108.1_files/docker/registry/v2/repositories/library/nginx/_layers/sha256/5b19c1bdd74be0e4a37550f5b05fbc2280961123634f58da0765bbc36b71f444/link</span><br><span class="line">default.4108.1_files/docker/registry/v2/repositories/library/nginx/_manifests/tags/latest/index/sha256/600bff7fb36d7992512f8c07abd50aac08db8f17c94e3c83e47d53435a1a6f7c/link</span><br><span class="line">default.4108.1_files/docker/registry/v2/repositories/library/nginx/_layers/sha256/e548f1a579cf529320a3c1d8789399e5fea0bfaa04cbb70d03890afafb748a2f/link</span><br><span class="line">default.4108.1_files/docker/registry/v2/repositories/library/nginx/_layers/sha256/8176e34d5d92775e15a602541e02fec25a22933a12561c114436b757b8e7a9e8/link</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="对比测试"><a href="#对比测试" class="headerlink" title="对比测试"></a>对比测试</h3><h4 id="第一组测试"><a href="#第一组测试" class="headerlink" title="第一组测试"></a>第一组测试</h4><ul>
+<li>条件</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>image name</th>
+<th>size</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>library&#x2F;centos</td>
+<td>9.238G</td>
+</tr>
+</tbody></table>
+<ul>
+<li>loacl storage</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>command</th>
+<th>start at</th>
+<th>end at</th>
+<th>spend</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>docker push 139.159.228.163&#x2F;library&#x2F;centos</td>
+<td>11:24:48</td>
+<td>11:28:26</td>
+<td>3m 38s</td>
+</tr>
+<tr>
+<td>docker pull 139.159.228.163&#x2F;library&#x2F;centos</td>
+<td>14:09:24</td>
+<td>14:12:06</td>
+<td>2m 42s</td>
+</tr>
+</tbody></table>
+<ul>
+<li>ceph swift</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>command</th>
+<th>start at</th>
+<th>end at</th>
+<th>spend</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>docker push 139.159.230.56&#x2F;library&#x2F;centos</td>
+<td>11:16:09</td>
+<td>11:20:28</td>
+<td>4m 19s</td>
+</tr>
+<tr>
+<td>docker pull 139.159.230.56&#x2F;library&#x2F;centos</td>
+<td>14:17:28</td>
+<td>14:21:43</td>
+<td>4m 15s</td>
+</tr>
+</tbody></table>
+<h4 id="第二组测试"><a href="#第二组测试" class="headerlink" title="第二组测试"></a>第二组测试</h4><ul>
+<li>条件</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>image name</th>
+<th>size</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>library&#x2F;fedora</td>
+<td>2.201G</td>
+</tr>
+</tbody></table>
+<ul>
+<li>loacl storage</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>command</th>
+<th>start at</th>
+<th>end at</th>
+<th>spend</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>docker push 139.159.228.163&#x2F;library&#x2F;fedora</td>
+<td>14:36:12</td>
+<td>14:36:50</td>
+<td>38s</td>
+</tr>
+<tr>
+<td>docker pull 139.159.228.163&#x2F;library&#x2F;fedora</td>
+<td>14:41:31</td>
+<td>14:42:17</td>
+<td>46s</td>
+</tr>
+</tbody></table>
+<ul>
+<li>ceph swift</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>command</th>
+<th>start at</th>
+<th>end at</th>
+<th>spend</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>docker push 139.159.230.56&#x2F;library&#x2F;fedora</td>
+<td>14:39:03</td>
+<td>14:40:01</td>
+<td>58s</td>
+</tr>
+<tr>
+<td>docker pull 139.159.230.56&#x2F;library&#x2F;fedora</td>
+<td>14:43:56</td>
+<td>14:45:03</td>
+<td>1m 07s</td>
+</tr>
+</tbody></table>
+
+
+  </article>
+  <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  <div class="busuanzi center">
+    page PV:&nbsp;<span id="busuanzi_value_page_pv"></span>&nbsp;・&nbsp;
+    site PV:&nbsp;<span id="busuanzi_value_site_pv"></span>&nbsp;・&nbsp;
+    site UV:&nbsp;<span id="busuanzi_value_site_uv"></span>
+  </div>
+
+
+    
+
+
+
+
+
+    </div>
+  </div>
+  <footer class="page-footer"><div class="clearfix">
+</div>
+<div class="right-foot">
+    <div class="firstrow">
+        <a href="#top" target="_self">
+        <svg class="i-caret-right" viewBox="0 0 32 32" width="24" height="24" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
+            <path d="M10 30 L26 16 10 2 Z"></path>
+        </svg>
+        </a>
+        © XXX 2016-2020
+    </div>
+    <div class="secondrow">
+        <a target="_blank" rel="noopener" href="https://github.com/gaoryrt/hexo-theme-pln">
+        Theme Pln
+        </a>
+    </div>
+</div>
+<div class="clearfix">
+</div>
+</footer>
+  <script src="//cdn.bootcss.com/jquery/2.2.1/jquery.min.js"></script>
+<script src="/js/search.min.js"></script>
+<script type="text/javascript">
+
+// disqus scripts
+
+
+// dropdown scripts
+$(".dropdown").click(function(event) {
+  var current = $(this);
+  event.stopPropagation();
+  $(current).children(".dropdown-content")[($(current).children(".dropdown-content").hasClass("open"))?'removeClass':'addClass']("open")
+});
+$(document).click(function(){
+    $(".dropdown-content").removeClass("open");
+})
+
+var path = "/search.xml";
+searchFunc(path, 'local-search-input', 'local-search-result');
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="google-site-verification" content="" />
+  <meta name="referrer" content="unsafe-url">
+  
+  <title>如何在项目中集成kubectl</title>
+  <meta name="author" content="John Doe">
+  <meta name="description" content="为什么需要在项目中集成kubectl工具开发模块中涉及到对k8s的资源操作,操作方式除了api调用以外也可以调用apply yaml的形式。由于k8s版本更新比较频繁,因此api方式调用k8s资源也会经常调整。为了简单化管理可以采用调用kubectl的形式进行与k8s交互。那么下面就给大家介绍一下如">
+  
+  
+  <meta property="og:title" content="如何在项目中集成kubectl"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta property="og:site_name" content="Hexo"/>
+  <link href="/apple-touch-icon-precomposed.png" sizes="180x180" rel="apple-touch-icon-precomposed">
+  <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/m.min.css">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML" async></script>
+
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+<body>
+  <a id="top"></a>
+  <div id="main">
+    <div class="main-ctnr">
+      <div class="behind">
+  <a href="/" class="back black-color">
+    <svg class="i-close" viewBox="0 0 32 32" width="22" height="22" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
+        <path d="M2 30 L30 2 M30 30 L2 2"></path>
+    </svg>
+  </a>
+  
+</div>
+
+
+  <article class="standard post">
+    <div class="title">
+      
+  
+    <h1 class="page-title center">
+        如何在项目中集成kubectl
+    </h1>
+  
+
+
+    </div>
+    <div class="meta center">
+      <time datetime="2018-05-14T07:54:04.000Z" itemprop="datePublished">
+  <svg class="i-calendar" viewBox="0 0 32 32" width="16" height="16" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+    <path d="M2 6 L2 30 30 30 30 6 Z M2 15 L30 15 M7 3 L7 9 M13 3 L13 9 M19 3 L19 9 M25 3 L25 9"></path>
+  </svg>
+  &nbsp;
+  2018-05-14
+</time>
+
+
+
+
+
+    
+    &nbsp;
+    <svg class="i-tag" viewBox="0 0 32 32" width="16" height="16" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+      <circle cx="24" cy="8" r="2"></circle>
+      <path d="M2 18 L18 2 30 2 30 14 14 30 Z"></path>
+    </svg>
+    &nbsp;
+    <a href="/tags/k8s/">k8s</a>
+
+
+    </div>
+    <hr>
+    
+      <ol class="toc"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E5%9C%A8%E9%A1%B9%E7%9B%AE%E4%B8%AD%E9%9B%86%E6%88%90kubectl%E5%B7%A5%E5%85%B7"><span class="toc-text">为什么需要在项目中集成kubectl工具</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%A6%82%E4%BD%95%E9%9B%86%E6%88%90"><span class="toc-text">如何集成</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E9%AA%8C%E8%AF%81%E6%96%B9%E5%BC%8F"><span class="toc-text">验证方式</span></a></li></ol>
+    
+    <div class="picture-container">
+      
+    </div>
+    <h4 id="为什么需要在项目中集成kubectl工具"><a href="#为什么需要在项目中集成kubectl工具" class="headerlink" title="为什么需要在项目中集成kubectl工具"></a>为什么需要在项目中集成kubectl工具</h4><p>开发模块中涉及到对k8s的资源操作,操作方式除了api调用以外也可以调用apply yaml的形式。<br>由于k8s版本更新比较频繁,因此api方式调用k8s资源也会经常调整。为了简单化管理可以采用调用kubectl的形式进行与k8s交互。那么下面就给大家介绍一下如何集成kubectl(本文是基于容器介绍)</p>
+<h4 id="如何集成"><a href="#如何集成" class="headerlink" title="如何集成"></a>如何集成</h4><ol>
+<li><p>新建template模板文件(kubeconf.gotmpl),kubectl需要权限才能操作k8s相关资源,下面的内容是基于k8s的&#x2F;etc&#x2F;kubernetes&#x2F;admin.conf而来</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">clusters:</span><br><span class="line">- cluster:</span><br><span class="line">    certificate-authority-data: &#123;&#123;.CAData&#125;&#125;</span><br><span class="line">    server: &#123;&#123;.Endpoint&#125;&#125;</span><br><span class="line">  name: kubernetes</span><br><span class="line">contexts:</span><br><span class="line">- context:</span><br><span class="line">    cluster: kubernetes</span><br><span class="line">    user: kubernetes-admin</span><br><span class="line">  name: kubernetes-admin@kubernetes</span><br><span class="line">current-context: kubernetes-admin@kubernetes</span><br><span class="line">kind: Config</span><br><span class="line">preferences: &#123;&#125;</span><br><span class="line">users:</span><br><span class="line">- name: kubernetes-admin</span><br><span class="line">  user:</span><br><span class="line">    client-certificate-data: &#123;&#123;.CertData&#125;&#125;</span><br><span class="line">    client-key-data: &#123;&#123;.KeyData&#125;&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>根据模板生成对应的文件</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br></pre></td><td class="code"><pre><span class="line">import (</span><br><span class="line">    &quot;bytes&quot;</span><br><span class="line">    &quot;html/template&quot;</span><br><span class="line">    &quot;io/ioutil&quot;</span><br><span class="line">    &quot;os&quot;</span><br><span class="line">    &quot;os/exec&quot;</span><br><span class="line">    &quot;strings&quot;</span><br><span class="line"></span><br><span class="line">    &quot;wise-resource-manager/pkg/domain&quot;</span><br><span class="line"></span><br><span class="line">    &quot;github.com/astaxie/beego/logs&quot;</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">var (</span><br><span class="line">    DIR_TEMP             = &quot;/tmp&quot;</span><br><span class="line">    FILE_PREFIX_KUBECONF = &quot;wisecloud-kubeconf-&quot;</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">func init() &#123;</span><br><span class="line">    os.MkdirAll(DIR_TEMP, 0777)</span><br><span class="line">&#125;</span><br><span class="line">// </span><br><span class="line">func Run(args string, environment *domain.SampleEnvironment) (string, error) &#123;</span><br><span class="line">    logs.Debug(&quot;args: &quot;, args)</span><br><span class="line"></span><br><span class="line">    content, err := parseConfFile(&quot;/kubeconf.gotmpl&quot;, environment)</span><br><span class="line">    if err != nil &#123;</span><br><span class="line">        logs.Error(err.Error())</span><br><span class="line">        return &quot;&quot;, err</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    path, err := newConfFile(content)</span><br><span class="line">    if err != nil &#123;</span><br><span class="line">        logs.Error(err.Error())</span><br><span class="line">        return &quot;&quot;, err</span><br><span class="line">    &#125;</span><br><span class="line">    defer os.RemoveAll(path)</span><br><span class="line"></span><br><span class="line">    out, err := execute(args, path)</span><br><span class="line">    if err != nil &#123;</span><br><span class="line">        logs.Error(err.Error())</span><br><span class="line">        return &quot;&quot;, err</span><br><span class="line">    &#125;</span><br><span class="line">    return out, nil</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// 指定kubeconfig环境变量并执行kubectl命令</span><br><span class="line">func execute(args string, path string) (string, error) &#123;</span><br><span class="line">    var (</span><br><span class="line">        out    bytes.Buffer</span><br><span class="line">        stderr bytes.Buffer</span><br><span class="line">    )</span><br><span class="line"></span><br><span class="line">    if err := os.Setenv(&quot;KUBECONFIG&quot;, path); err != nil &#123;</span><br><span class="line">        logs.Error(err.Error())</span><br><span class="line">        return out.String(), err</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    argList := strings.Split(args, &quot; &quot;)</span><br><span class="line">    cmd := exec.Command(argList[0], argList[1:]...)</span><br><span class="line">    cmd.Stdout = &amp;out</span><br><span class="line">    cmd.Stderr = &amp;stderr</span><br><span class="line">    err := cmd.Run()</span><br><span class="line">    if err != nil &#123;</span><br><span class="line">        logs.Error(err.Error(), stderr.String())</span><br><span class="line">        return stderr.String(), err</span><br><span class="line">    &#125;</span><br><span class="line">    return out.String(), nil</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// 根据模板生成文件</span><br><span class="line">func parseConfFile(tpl string, obj interface&#123;&#125;) (string, error) &#123;</span><br><span class="line">    var buf bytes.Buffer</span><br><span class="line"></span><br><span class="line">    t, err := template.ParseFiles(tpl)</span><br><span class="line">    if err != nil &#123;</span><br><span class="line">        logs.Error(err.Error())</span><br><span class="line">        return string(buf.Bytes()), err</span><br><span class="line">    &#125;</span><br><span class="line">    if err := t.Execute(&amp;buf, obj); err != nil &#123;</span><br><span class="line">        return string(buf.Bytes()), err</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    return string(buf.Bytes()), nil</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">// 生成文件到指定目录</span><br><span class="line">func newConfFile(content string) (path string, err error) &#123;</span><br><span class="line">    file, err := ioutil.TempFile(DIR_TEMP, FILE_PREFIX_KUBECONF)</span><br><span class="line">    if err != nil &#123;</span><br><span class="line">        logs.Error(&quot;create kubeconf temp file error!&quot;)</span><br><span class="line">        return &quot;&quot;, err</span><br><span class="line">    &#125;</span><br><span class="line">    defer file.Close()</span><br><span class="line"></span><br><span class="line">    path = file.Name()</span><br><span class="line">    file.WriteString(content)</span><br><span class="line">    return</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+<li><p>打包包含kubectl的镜像</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">FROM centos:7</span><br><span class="line">MAINTAINER excessivespeed@126.com</span><br><span class="line"></span><br><span class="line">RUN curl -SL http://p1c71d06h.bkt.clouddn.com/kubectl-v1.8.6 -o /usr/bin/kubectl-v1.8.6 &amp;&amp; \</span><br><span class="line">    curl -SL http://p1c71d06h.bkt.clouddn.com/kubectl-v1.7.3 -o /usr/bin/kubectl-v1.7.3 &amp;&amp; \</span><br><span class="line">    chmod 777 /usr/bin/kubectl-v1.8.6 &amp;&amp; \</span><br><span class="line">    chmod 777 /usr/bin/kubectl-v1.7.3 &amp;&amp; \</span><br><span class="line"></span><br><span class="line">COPY ./kubeconf.gotmpl /</span><br><span class="line">COPY ./wise-resource-manager /go/bin/wise-resource-manager</span><br><span class="line"></span><br><span class="line">RUN chmod u+x /go/bin/wise-resource-manager</span><br><span class="line"></span><br><span class="line">WORKDIR /go/bin/</span><br><span class="line"></span><br><span class="line">RUN cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime</span><br><span class="line">ENTRYPOINT [&quot;/go/bin/wise-resource-manager&quot;]</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h4 id="验证方式"><a href="#验证方式" class="headerlink" title="验证方式"></a>验证方式</h4><ol>
+<li>用户可以通过运行镜像提供简单的api调用方式验证。</li>
+<li>保证gotmpl文件能正确生成的情况下,直接在容器任意目录新建一个任意文件.这里以wisecloud-kubeconf.conf为例。<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">docker exec -it docker-container /bin/sh //进入容器</span><br><span class="line">pwd  //假设当前目录为/bin/go</span><br><span class="line">vi wisecloud-kubeconf.conf //拷贝/etc/kubernetes/admin.conf文件内容到这里</span><br><span class="line">export KUBECONFIG=/bin/go/wisecloud-kubeconf.conf</span><br><span class="line">kubectl get nodes //列出当前集群的所有节点</span><br></pre></td></tr></table></figure></li>
+</ol>
+
+
+  </article>
+  <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+  <div class="busuanzi center">
+    page PV:&nbsp;<span id="busuanzi_value_page_pv"></span>&nbsp;・&nbsp;
+    site PV:&nbsp;<span id="busuanzi_value_site_pv"></span>&nbsp;・&nbsp;
+    site UV:&nbsp;<span id="busuanzi_value_site_uv"></span>
+  </div>
+
+
+    
+
+
+
+
+
+    </div>
+  </div>
+  <footer class="page-footer"><div class="clearfix">
+</div>
+<div class="right-foot">
+    <div class="firstrow">
+        <a href="#top" target="_self">
+        <svg class="i-caret-right" viewBox="0 0 32 32" width="24" height="24" fill="none" stroke="currentcolor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
+            <path d="M10 30 L26 16 10 2 Z"></path>
+        </svg>
+        </a>
+        © XXX 2016-2020
+    </div>
+    <div class="secondrow">
+        <a target="_blank" rel="noopener" href="https://github.com/gaoryrt/hexo-theme-pln">
+        Theme Pln
+        </a>
+    </div>
+</div>
+<div class="clearfix">
+</div>
+</footer>
+  <script src="//cdn.bootcss.com/jquery/2.2.1/jquery.min.js"></script>
+<script src="/js/search.min.js"></script>
+<script type="text/javascript">
+
+// disqus scripts
+
+
+// dropdown scripts
+$(".dropdown").click(function(event) {
+  var current = $(this);
+  event.stopPropagation();
+  $(current).children(".dropdown-content")[($(current).children(".dropdown-content").hasClass("open"))?'removeClass':'addClass']("open")
+});
+$(document).click(function(){
+    $(".dropdown-content").removeClass("open");
+})
+
+var path = "/search.xml";
+searchFunc(path, 'local-search-input', 'local-search-result');
+
+</script>
+
+</body>
+</html>
